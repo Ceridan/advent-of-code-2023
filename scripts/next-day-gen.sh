@@ -38,8 +38,8 @@ fun main() {
     val day${DAY} = Day${DAY}()
     val input = readInputAsString("day${DAY}.txt")
 
-    print("${DAY}.txt, part 1: \${day${DAY}.part1(input)}")
-    print("${DAY}.txt, part 2: \${day${DAY}.part2(input)}")
+    println("${DAY}, part 1: \${day${DAY}.part1(input)}")
+    println("${DAY}, part 2: \${day${DAY}.part2(input)}")
 }
 EOF
 
@@ -72,7 +72,7 @@ class Day${DAY}Test {
 
     @Test
     fun \`part2 example\`() {
-        assertEquals("abc", day${DAY}.part1("abc"))
+        assertEquals("abc", day${DAY}.part2("abc"))
     }
 }
 EOF
