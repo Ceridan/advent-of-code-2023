@@ -8,7 +8,29 @@ class Day01 {
         .sumOf { digits -> digits.first().digitToInt() * 10 + digits.last().digitToInt() }
 
     fun part2(input: List<String>): Int {
-        val textToDigit = mapOf(
+        val firstDigits = input.map { line -> findFirstDigit(line) }
+        val lastDigits = input.map { line -> findFirstDigit(line, isBackward = true) }
+        return firstDigits.zip(lastDigits).sumOf { it.first * 10 + it.second }
+    }
+
+    private fun findFirstDigit(line: String, isBackward: Boolean = false): Int {
+        val range: IntProgression = if (isBackward) line.length - 1 downTo 0 else line.indices
+        for (i in range) {
+            if (line[i].isDigit()) {
+                return line[i].digitToInt()
+            }
+            for (j in MIN_KEY_SIZE..MAX_KEY_SIZE) {
+                val possibleKey = line.substring(i, min(i + j, line.length))
+                if (possibleKey in TEXT_TO_DIGIT) {
+                    return TEXT_TO_DIGIT[possibleKey]!!
+                }
+            }
+        }
+        return 0
+    }
+
+    private companion object {
+        val TEXT_TO_DIGIT = mapOf(
             "zero" to 0,
             "one" to 1,
             "two" to 2,
@@ -20,25 +42,8 @@ class Day01 {
             "eight" to 8,
             "nine" to 9,
         )
-        val firstDigits = input.map { line -> findFirstDigit(line, textToDigit) }
-        val lastDigits =
-            input.map { line -> findFirstDigit(line.reversed(), textToDigit.mapKeys { it.key.reversed() }) }
-        return firstDigits.zip(lastDigits).sumOf { it.first * 10 + it.second }
-    }
-
-    private fun findFirstDigit(line: String, ttd: Map<String, Int>): Int {
-        for ((i, ch) in line.withIndex()) {
-            if (ch.isDigit()) {
-                return ch.digitToInt()
-            }
-            for (j in 3..5) {
-                val possibleKey = line.substring(i, min(i + j, line.length))
-                if (possibleKey in ttd) {
-                    return ttd[possibleKey]!!
-                }
-            }
-        }
-        return 0
+        val MIN_KEY_SIZE = TEXT_TO_DIGIT.keys.minOf { it.length }
+        val MAX_KEY_SIZE = TEXT_TO_DIGIT.keys.maxOf { it.length }
     }
 }
 
