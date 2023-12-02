@@ -13,16 +13,22 @@ class Day02 {
         companion object {
             fun fromString(game: String): CubeGame {
                 val gameRegex = "^Game (\\d+): (.*)$".toRegex()
+                val redRegex = "(\\d+) red".toRegex()
+                val greenRegex = "(\\d+) green".toRegex()
+                val blueRegex = "(\\d+) blue".toRegex()
+
                 val (gameId, gameResultString) = gameRegex.find(game)!!.destructured
                 val gameResults = gameResultString.split(';')
+
                 val red = IntArray(gameResults.size)
                 val green = IntArray(gameResults.size)
                 val blue = IntArray(gameResults.size)
                 for ((i, result) in gameResults.withIndex()) {
-                    red[i] = "(\\d+) red".toRegex().find(result)?.groupValues?.get(1)?.toInt() ?: 0
-                    green[i] = "(\\d+) green".toRegex().find(result)?.groupValues?.get(1)?.toInt() ?: 0
-                    blue[i] = "(\\d+) blue".toRegex().find(result)?.groupValues?.get(1)?.toInt() ?: 0
+                    red[i] = redRegex.find(result)?.groupValues?.get(1)?.toInt() ?: 0
+                    green[i] = greenRegex.find(result)?.groupValues?.get(1)?.toInt() ?: 0
+                    blue[i] = blueRegex.find(result)?.groupValues?.get(1)?.toInt() ?: 0
                 }
+
                 return CubeGame(gameId.toInt(), red = red, green = green, blue = blue)
             }
         }
