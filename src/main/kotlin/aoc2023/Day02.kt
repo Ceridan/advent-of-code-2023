@@ -14,7 +14,7 @@ class Day02 {
             fun fromString(game: String): CubeGame {
                 val gameRegex = "^Game (\\d+): (.*)$".toRegex()
                 val (gameId, gameResultString) = gameRegex.find(game)!!.destructured
-                val gameResults = gameResultString.split(';');
+                val gameResults = gameResultString.split(';')
                 val red = IntArray(gameResults.size)
                 val green = IntArray(gameResults.size)
                 val blue = IntArray(gameResults.size)
