@@ -7,11 +7,10 @@ class Day03 {
         var sum = 0
         for (y in input.indices) {
             numRegex.findAll(input[y]).forEach { match ->
-                getAdjacentCoords(y to match.range)
-                    .filter { coord -> symbols.containsKey(coord) }
-                    .forEach { _ -> sum += match.value.toInt() }
+                if (getAdjacentCoords(y to match.range).any { symbols.containsKey(it) }) {
+                    sum += match.value.toInt()
+                }
             }
-
         }
         return sum
     }
