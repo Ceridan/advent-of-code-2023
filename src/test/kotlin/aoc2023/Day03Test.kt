@@ -45,6 +45,6 @@ class Day03Test {
             ".664.598..",
         )
 
-        assertEquals(467835, day03.part2(input))
+        assertEquals(467835L, day03.part2(input))
     }
 }

@@ -2,23 +2,26 @@ package aoc2023
 
 class Day03 {
     fun part1(input: List<String>): Int {
-        val adjacent = getSymbolSurrounding(input)
+        val symbols = getSymbolCoords(input)
         val numRegex = "(\\d+)".toRegex()
         var sum = 0
         for (y in input.indices) {
             numRegex.findAll(input[y]).forEach { match ->
-                if (match.range.any { x -> adjacent.contains(y to x) }) {
-                    sum += match.value.toInt()
-                }
+                getAdjacentCoords(y to match.range)
+                    .filter { coord -> symbols.containsKey(coord) }
+                    .forEach { _ -> sum += match.value.toInt() }
             }
 
         }
         return sum
     }
 
-    fun part2(input: List<String>): Int {
-        val gearNumbers = getGearCoords(input)
+    fun part2(input: List<String>): Long {
+        val gearNumbers = getSymbolCoords(input)
+            .filterValues { it == '*' }
+            .keys
             .associateBy({it}, {mutableSetOf<Int>()})
+
         val numRegex = "(\\d+)".toRegex()
         for (y in input.indices) {
             numRegex.findAll(input[y]).forEach { match ->
@@ -26,36 +29,24 @@ class Day03 {
                     .filter { coord -> gearNumbers.containsKey(coord) }
                     .forEach { coord -> gearNumbers[coord]!!.add(match.value.toInt()) }
             }
-
         }
 
         return gearNumbers.values
             .filter { it.size == 2 }
-            .map { nums -> nums.fold(1) { mult, num -> num * mult} }
-            .sum()
+            .sumOf { nums -> nums.fold(1L) { mult, num -> num * mult } }
     }
 
-    private fun getSymbolSurrounding(scheme: List<String>): Set<Pair<Int, Int>> {
-        val surrounding = mutableSetOf<Pair<Int, Int>>()
+    private fun getSymbolCoords(scheme: List<String>): Map<Pair<Int, Int>, Char> {
+        val symbols = mutableMapOf<Pair<Int, Int>, Char>()
         for (y in scheme.indices) {
             val chars = scheme[y].toCharArray()
             for (x in chars.indices) {
-                if (chars[x].isDigit() || chars[x] == '.') continue
-                surrounding.addAll(getAdjacentCoords(y to IntRange(x, x)))
+                val ch = chars[x]
+                if (ch.isDigit() || ch == '.') continue
+                symbols[y to x] = ch
             }
         }
-        return surrounding
-    }
-
-    private fun getGearCoords(scheme: List<String>): Set<Pair<Int, Int>> {
-        val coords = mutableSetOf<Pair<Int, Int>>()
-        for (y in scheme.indices) {
-            val chars = scheme[y].toCharArray()
-            for (x in chars.indices) {
-                if (chars[x] == '*') coords.add(y to x)
-            }
-        }
-        return coords
+        return symbols
     }
 
     private fun getAdjacentCoords(coord: Pair<Int, IntRange>): Set<Pair<Int, Int>> {
@@ -68,7 +59,6 @@ class Day03 {
         }
         return surrounding
     }
-
 }
 
 fun main() {
