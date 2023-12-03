@@ -50,14 +50,14 @@ class Day03 {
     }
 
     private fun getAdjacentCoords(coord: Pair<Int, IntRange>): Set<Pair<Int, Int>> {
-        val surrounding = mutableSetOf<Pair<Int, Int>>()
+        val adjacent = mutableSetOf<Pair<Int, Int>>()
         val (y, x) = coord
         for (dy in y-1..y+1) {
             for (dx in x.first -1..x.last +1) {
-                surrounding.add(dy to dx)
+                adjacent.add(dy to dx)
             }
         }
-        return surrounding
+        return adjacent
     }
 }
 
