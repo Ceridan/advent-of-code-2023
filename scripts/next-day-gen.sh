@@ -25,18 +25,18 @@ cat <<EOF > "$code_filename"
 package aoc2023
 
 class Day${DAY} {
-    fun part1(input: String): String {
-        return input
+    fun part1(input: List<String>): Int {
+        return 0
     }
 
-    fun part2(input: String): String {
-        return input
+    fun part2(input: List<String>): Int {
+        return 0
     }
 }
 
 fun main() {
     val day${DAY} = Day${DAY}()
-    val input = readInputAsString("day${DAY}.txt")
+    val input = readInputAsStringList("day${DAY}.txt")
 
     println("${DAY}, part 1: \${day${DAY}.part1(input)}")
     println("${DAY}, part 2: \${day${DAY}.part2(input)}")
@@ -67,12 +67,12 @@ class Day${DAY}Test {
 
     @Test
     fun \`part1 example\`() {
-        assertEquals("abc", day${DAY}.part1("abc"))
+        assertEquals(0, day${DAY}.part1(listOf()))
     }
 
     @Test
     fun \`part2 example\`() {
-        assertEquals("abc", day${DAY}.part2("abc"))
+        assertEquals(0, day${DAY}.part2(listOf()))
     }
 }
 EOF
