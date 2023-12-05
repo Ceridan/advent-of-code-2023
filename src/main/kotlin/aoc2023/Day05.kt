@@ -94,8 +94,8 @@ class Day05 {
             if (numsMatch != null) {
                 val (dest, source, count) = numsMatch.destructured
                 val entry = TransformEntry(
-                    source = LongRange(source.toLong(), source.toLong() + count.toLong() - 1),
-                    destination = LongRange(dest.toLong(), dest.toLong() + count.toLong() - 1),
+                    source = LongRange(source.toLong(), source.toLong() + count.toLong() - 1L),
+                    destination = LongRange(dest.toLong(), dest.toLong() + count.toLong() - 1L),
                 )
                 transforms[key]!!.add(entry)
                 continue
