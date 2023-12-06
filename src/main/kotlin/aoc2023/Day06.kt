@@ -10,12 +10,12 @@ class Day06 {
 
         var first = 1L
         while ((time - first) * first <= distance) {
-            first += 1
+            first += 1L
         }
 
         var last = time - 1L
         while ((time - last) * last <= distance) {
-            last -= 1
+            last -= 1L
         }
 
         return last - first + 1L
