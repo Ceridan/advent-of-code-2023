@@ -6,9 +6,28 @@ class Day06 {
             .fold(1) {acc, r -> acc * r }
 
     fun part2(input: List<String>): Long {
-        return 0L
+        val races = parseRaces(input)
+        val (time, distance) = concatRaces(races)
+
+        var first = 1L
+        while ((time - first) * first <= distance) {
+            first += 1
+        }
+
+        var last = time - 1L
+        while ((time - last) * last <= distance) {
+            last -= 1
+        }
+
+        return last - first + 1L
     }
 
+    private fun concatRaces(races: List<Race>): Pair<Long, Long> {
+        val parser: (List<Int>) -> Long = { nums -> nums.map { it.toString() }.joinToString(separator = "").toLong() }
+        val time = parser(races.map { it.time })
+        val distance = parser(races.map { it.distance })
+        return time to distance
+    }
 
     private fun parseRaces(input: List<String>): List<Race> {
         val parser: (String) -> List<Int> = { s -> s.split(' ').drop(1).filter { it.isNotEmpty() }.map { it.toInt() } }
