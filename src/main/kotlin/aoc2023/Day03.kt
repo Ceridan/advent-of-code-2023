@@ -19,7 +19,7 @@ class Day03 {
         val gearNumbers = getSymbolCoords(input)
             .filterValues { it == '*' }
             .keys
-            .associateBy({it}, {mutableSetOf<Int>()})
+            .associateBy({ it }, { mutableSetOf<Int>() })
 
         val numRegex = "(\\d+)".toRegex()
         for (y in input.indices) {
@@ -51,8 +51,8 @@ class Day03 {
     private fun getAdjacentCoords(coord: Pair<Int, IntRange>): Set<Pair<Int, Int>> {
         val adjacent = mutableSetOf<Pair<Int, Int>>()
         val (y, x) = coord
-        for (dy in y-1..y+1) {
-            for (dx in x.first -1..x.last +1) {
+        for (dy in y - 1..y + 1) {
+            for (dx in x.first - 1..x.last + 1) {
                 adjacent.add(dy to dx)
             }
         }

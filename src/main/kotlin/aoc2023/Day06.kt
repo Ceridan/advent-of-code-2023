@@ -2,8 +2,8 @@ package aoc2023
 
 class Day06 {
     fun part1(input: List<String>): Int = parseRaces(input)
-            .map { race -> (1..race.time).map { t -> (race.time - t) * t }.count { it > race.distance } }
-            .fold(1) {acc, r -> acc * r }
+        .map { race -> (1..race.time).map { t -> (race.time - t) * t }.count { it > race.distance } }
+        .fold(1) { acc, r -> acc * r }
 
     fun part2(input: List<String>): Long {
         val races = parseRaces(input)
@@ -23,7 +23,7 @@ class Day06 {
     }
 
     private fun concatRaces(races: List<Race>): Pair<Long, Long> {
-        val parser: (List<Int>) -> Long = { nums -> nums.map { it.toString() }.joinToString(separator = "").toLong() }
+        val parser: (List<Int>) -> Long = { nums -> nums.joinToString(separator = "") { it.toString() }.toLong() }
         val time = parser(races.map { it.time })
         val distance = parser(races.map { it.distance })
         return time to distance

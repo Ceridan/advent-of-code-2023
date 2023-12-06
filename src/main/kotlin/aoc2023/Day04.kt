@@ -11,7 +11,7 @@ class Day04 {
         val counts = IntArray(cards.size) { _ -> 1 }
 
         for (card in cards) {
-            for (j in card.id..<card.id+card.countMatches()) {
+            for (j in card.id..<card.id + card.countMatches()) {
                 if (j >= counts.size) break
                 counts[j] += counts[card.id - 1]
             }

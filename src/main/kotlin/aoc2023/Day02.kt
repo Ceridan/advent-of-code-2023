@@ -3,13 +3,13 @@ package aoc2023
 class Day02 {
     fun part1(input: List<String>, redCap: Int, greenCap: Int, blueCap: Int): Int = input
         .map { line -> CubeGame.fromString(line) }
-        .filter { game -> game.red.all { it <= redCap } && game.green.all { it <= greenCap } && game.blue.all { it <= blueCap }}
+        .filter { game -> game.red.all { it <= redCap } && game.green.all { it <= greenCap } && game.blue.all { it <= blueCap } }
         .sumOf { game -> game.id }
 
     fun part2(input: List<String>): Int = input
         .map { line -> CubeGame.fromString(line) }.sumOf { game -> game.red.max() * game.green.max() * game.blue.max() }
 
-    class CubeGame(val id: Int, val red: IntArray, val green: IntArray, val blue: IntArray, ) {
+    class CubeGame(val id: Int, val red: IntArray, val green: IntArray, val blue: IntArray) {
         companion object {
             fun fromString(game: String): CubeGame {
                 val gameRegex = "^Game (\\d+): (.*)$".toRegex()
