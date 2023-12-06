@@ -19,7 +19,7 @@ class Day06Test {
             "Distance:  9  40  200",
         )
 
-        assertEquals(288, day06.part1(input))
+        assertEquals(288L, day06.part1(input))
     }
 
     @Test
