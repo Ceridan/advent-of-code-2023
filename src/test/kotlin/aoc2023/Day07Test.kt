@@ -22,7 +22,7 @@ class Day07Test {
             "QQQJA 483",
         )
 
-        assertEquals(5905, day07.part1(input))
+        assertEquals(6440L, day07.part1(input))
     }
 
     @Test
@@ -35,6 +35,6 @@ class Day07Test {
             "QQQJA 483",
         )
 
-        assertEquals(0, day07.part2(listOf()))
+        assertEquals(5905L, day07.part2(input))
     }
 }
