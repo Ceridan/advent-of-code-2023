@@ -56,6 +56,6 @@ class Day08Test {
             "22Z = (22B, 22B)",
             "XXX = (XXX, XXX)",
         )
-        assertEquals(6, day08.part2(input))
+        assertEquals(6L, day08.part2(input))
     }
 }

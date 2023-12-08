@@ -7,31 +7,43 @@ class Day08 {
         var steps = 0
         var directionIndex = 0
         while (node != "ZZZ") {
-            node = if (directions[directionIndex] == 'L') network[node]!!.first else network[node]!!.second
+            node =
+                if (directions[directionIndex] == 'L') network[node]!!.first else network[node]!!.second
             directionIndex = (directionIndex + 1) % directions.size
             steps += 1
         }
         return steps
     }
 
-    fun part2(input: List<String>): Int {
+    fun part2(input: List<String>): Long {
         val (directions, network) = parseInput(input)
-        val current = network.keys.filter { it.endsWith('A') }.toTypedArray()
+        val aNodeMap =
+            network.keys.filter { it.endsWith('A') }.associateBy({ it }, { mutableListOf<Int>() })
         val zNodes = network.keys.filter { it.endsWith('Z') }
-        var steps = 0
-        var zCount = 0
-        var directionIndex = 0
-        while (zCount < zNodes.size) {
-            zCount = 0
-            for (i in current.indices) {
-                current[i] = if (directions[directionIndex] == 'L') network[current[i]]!!.first else network[current[i]]!!.second
-                if (current[i] in zNodes) zCount += 1
+
+        for (aNode in aNodeMap.keys) {
+            var node = aNode
+            var steps = 0
+            var directionIndex = 0
+            val cache = mutableSetOf<Pair<String, Int>>()
+
+            while (!cache.contains(node to directionIndex)) {
+                cache.add(node to directionIndex)
+                node =
+                    if (directions[directionIndex] == 'L') network[node]!!.first else network[node]!!.second
+                directionIndex = (directionIndex + 1) % directions.size
+                steps += 1
+                if (node in zNodes) aNodeMap[aNode]!!.add(steps)
             }
-            directionIndex = (directionIndex + 1) % directions.size
-            steps += 1
         }
-        return steps
+
+        return aNodeMap.values.flatten().toSet().map { it.toLong() }
+            .reduce { acc, num -> lcm(acc, num) }
     }
+
+    private fun gcd(a: Long, b: Long): Long = if (a == 0L) b else gcd(b % a, a)
+
+    private fun lcm(a: Long, b: Long): Long = a * b / gcd(a, b)
 
     private fun parseInput(input: List<String>): Pair<CharArray, Map<String, Pair<String, String>>> {
         val directions = input[0].toCharArray()
