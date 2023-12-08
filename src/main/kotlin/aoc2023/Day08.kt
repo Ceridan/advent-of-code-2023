@@ -32,7 +32,7 @@ class Day08 {
                 node =
                     if (directions[directionIndex] == 'L') network[node]!!.first else network[node]!!.second
                 directionIndex = (directionIndex + 1) % directions.size
-                steps += 1
+                steps += 1L
                 if (node in zNodes) aNodeMap[aNode]!!.add(steps)
             }
         }
