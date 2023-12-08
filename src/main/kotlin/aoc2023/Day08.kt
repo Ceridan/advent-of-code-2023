@@ -18,12 +18,12 @@ class Day08 {
     fun part2(input: List<String>): Long {
         val (directions, network) = parseInput(input)
         val aNodeMap =
-            network.keys.filter { it.endsWith('A') }.associateBy({ it }, { mutableListOf<Int>() })
+            network.keys.filter { it.endsWith('A') }.associateBy({ it }, { mutableListOf<Long>() })
         val zNodes = network.keys.filter { it.endsWith('Z') }
 
         for (aNode in aNodeMap.keys) {
             var node = aNode
-            var steps = 0
+            var steps = 0L
             var directionIndex = 0
             val cache = mutableSetOf<Pair<String, Int>>()
 
@@ -37,8 +37,7 @@ class Day08 {
             }
         }
 
-        return aNodeMap.values.flatten().toSet().map { it.toLong() }
-            .reduce { acc, num -> lcm(acc, num) }
+        return aNodeMap.values.flatten().toSet().reduce { acc, num -> lcm(acc, num) }
     }
 
     private fun gcd(a: Long, b: Long): Long = if (a == 0L) b else gcd(b % a, a)
