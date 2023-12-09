@@ -2,30 +2,14 @@ package aoc2023
 
 class Day09 {
     fun part1(input: List<String>): Int {
-        val histories = input.map { line -> line.split(' ').map { it.toInt() } }
-        var valuesSum = 0
-        for (history in histories) {
-            val sequences = mutableListOf(history)
-            var prevSequence = history
-            while (!prevSequence.all { it == 0 }) {
-                val nextSequence = mutableListOf<Int>()
-                for (i in 1..<prevSequence.size) {
-                    nextSequence.add(prevSequence[i] - prevSequence[i-1])
-                }
-                sequences.add(nextSequence)
-                prevSequence = nextSequence
-            }
-
-            var nextElement = 0
-            for (i in sequences.size-2 downTo 0) {
-                nextElement += sequences[i].last()
-            }
-            valuesSum += nextElement
-        }
-        return valuesSum
+        return predictNextElement(input, isBackward = false)
     }
 
     fun part2(input: List<String>): Int {
+        return predictNextElement(input, isBackward = true)
+    }
+
+    private fun predictNextElement(input: List<String>, isBackward: Boolean = false): Int {
         val histories = input.map { line -> line.split(' ').map { it.toInt() } }
         var valuesSum = 0
         for (history in histories) {
@@ -34,15 +18,15 @@ class Day09 {
             while (!prevSequence.all { it == 0 }) {
                 val nextSequence = mutableListOf<Int>()
                 for (i in 1..<prevSequence.size) {
-                    nextSequence.add(prevSequence[i] - prevSequence[i-1])
+                    nextSequence.add(prevSequence[i] - prevSequence[i - 1])
                 }
                 sequences.add(nextSequence)
                 prevSequence = nextSequence
             }
 
             var nextElement = 0
-            for (i in sequences.size-2 downTo 0) {
-                nextElement = sequences[i].first() - nextElement
+            for (i in sequences.size - 2 downTo 0) {
+                nextElement = if (isBackward) sequences[i].first() - nextElement else sequences[i].last() + nextElement
             }
             valuesSum += nextElement
         }
