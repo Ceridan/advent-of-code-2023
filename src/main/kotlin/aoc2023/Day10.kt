@@ -12,13 +12,13 @@ class Day10 {
     fun part2(input: String): Int {
         val (start, grid) = parseInput(input)
         val loop = findLoop(start, grid)
-        val (newGrid, newLoopCoords) = expandGrid(input, grid, loop)
+        val (newGridCoords, newLoopCoords) = expandCoords(input, loop)
         val outside = newLoopCoords.toMutableSet()
         val deque = ArrayDeque(listOf(-1 to -1))
         while (deque.isNotEmpty()) {
             val (y, x) = deque.removeFirst()
             if ((y to x) in outside) continue
-            if ((y to x) !in newGrid) continue
+            if ((y to x) !in newGridCoords) continue
 
             outside.add(y to x)
             deque.addFirst(y - 1 to x)
@@ -27,7 +27,7 @@ class Day10 {
             deque.addFirst(y to x + 1)
         }
 
-        return newGrid.keys.subtract(outside)
+        return newGridCoords.subtract(outside)
             .count { it.first % 2 == 0 && it.second % 2 == 0 }
     }
 
@@ -45,8 +45,8 @@ class Day10 {
         return loop
     }
 
-    private fun expandGrid(input: String, grid: Map<Coord, Pipe>, loop: Set<Pipe>): Pair<Map<Coord, Pipe>, Set<Coord>> {
-        val newGrid = mutableMapOf<Coord, Pipe>()
+    private fun expandCoords(input: String, loop: Set<Pipe>): Pair<Set<Coord>, Set<Coord>> {
+        val newGridCoords = mutableSetOf<Coord>()
         val newLoopCoords = mutableSetOf<Coord>()
         val lines = input.split('\n')
         val rows = lines.size
@@ -54,68 +54,63 @@ class Day10 {
 
         for (y in -1..rows * 2) {
             for (x in -1..cols * 2) {
-                newGrid[y to x] = Pipe('.', y to x, y to x, y to x)
+                newGridCoords.add(y to x)
             }
-        }
-
-        val loopCoords = loop.map { it.selfCoord }.toSet()
-        for (coord in grid.keys) {
-            if (coord !in loopCoords) continue
-            val (y, x) = coord
-            newGrid[(y * 2) to (x * 2)] = grid[coord]!!
         }
 
         for (pipe in loop) {
             val (y, x) = pipe.selfCoord
             val newY = y * 2
             val newX = x * 2
+            newGridCoords.add(newY to newX)
             newLoopCoords.add(newY to newX)
+
             when (pipe.type) {
                 '|' -> {
-                    newGrid[newY - 1 to newX] = Pipe('|', newY - 1 to newX, newY - 2 to newX, newY to newX)
-                    newGrid[newY + 1 to newX] = Pipe('|', newY + 1 to newX, newY to newX, newY + 2 to newX)
+                    newGridCoords.add(newY - 1 to newX)
+                    newGridCoords.add(newY + 1 to newX)
                     newLoopCoords.add(newY - 1 to newX)
                     newLoopCoords.add(newY + 1 to newX)
                 }
 
                 '-' -> {
-                    newGrid[newY to newX - 1] = Pipe('-', newY to newX - 1, newY to newX - 2, newY to newX)
-                    newGrid[newY to newX + 1] = Pipe('-', newY to newX + 1, newY to newX, newY to newX + 2)
+                    newGridCoords.add(newY to newX - 1)
+                    newGridCoords.add(newY to newX + 1)
                     newLoopCoords.add(newY to newX - 1)
                     newLoopCoords.add(newY to newX + 1)
                 }
 
                 'L' -> {
-                    newGrid[newY - 1 to newX] = Pipe('|', newY - 1 to newX, newY - 2 to newX, newY to newX)
-                    newGrid[newY to newX + 1] = Pipe('-', newY to newX + 1, newY to newX, newY to newX + 2)
+                    newGridCoords.add(newY - 1 to newX)
+                    newGridCoords.add(newY to newX + 1)
                     newLoopCoords.add(newY - 1 to newX)
                     newLoopCoords.add(newY to newX + 1)
                 }
 
                 'J' -> {
-                    newGrid[newY - 1 to newX] = Pipe('|', newY - 1 to newX, newY - 2 to newX, newY to newX)
-                    newGrid[newY to newX - 1] = Pipe('-', newY to newX - 1, newY to newX - 2, newY to newX)
+                    newGridCoords.add(newY - 1 to newX)
+                    newGridCoords.add(newY to newX - 1)
                     newLoopCoords.add(newY - 1 to newX)
                     newLoopCoords.add(newY to newX - 1)
                 }
 
                 '7' -> {
-                    newGrid[newY to newX - 1] = Pipe('-', newY to newX - 1, newY to newX - 2, newY to newX)
-                    newGrid[newY + 1 to newX] = Pipe('|', newY + 1 to newX, newY to newX, newY + 2 to newX)
+                    newGridCoords.add(newY to newX - 1)
+                    newGridCoords.add(newY + 1 to newX)
                     newLoopCoords.add(newY to newX - 1)
                     newLoopCoords.add(newY + 1 to newX)
                 }
 
                 'F' -> {
-                    newGrid[newY to newX + 1] = Pipe('-', newY to newX + 1, newY to newX, newY to newX + 2)
-                    newGrid[newY + 1 to newX] = Pipe('|', newY + 1 to newX, newY to newX, newY + 2 to newX)
+                    newGridCoords.add(newY to newX + 1)
+                    newGridCoords.add(newY + 1 to newX)
                     newLoopCoords.add(newY to newX + 1)
                     newLoopCoords.add(newY + 1 to newX)
                 }
             }
         }
 
-        return newGrid to newLoopCoords
+        return newGridCoords to newLoopCoords
     }
 
     private fun parseInput(input: String): Pair<Pipe, Map<Coord, Pipe>> {
