@@ -21,10 +21,10 @@ class Day10 {
             if ((y to x) !in newGridCoords) continue
 
             outside.add(y to x)
-            deque.addFirst(y - 1 to x)
-            deque.addFirst(y + 1 to x)
-            deque.addFirst(y to x - 1)
-            deque.addFirst(y to x + 1)
+            deque.add(y - 1 to x)
+            deque.add(y + 1 to x)
+            deque.add(y to x - 1)
+            deque.add(y to x + 1)
         }
 
         return newGridCoords.subtract(outside)
