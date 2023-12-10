@@ -5,21 +5,117 @@ typealias Coord = Pair<Int, Int>
 class Day10 {
     fun part1(input: String): Int {
         val (start, grid) = parseInput(input)
-        var prevCoord = start.selfCoord
-        var nextCoord = start.outCoord
-        var steps = 1
-        while (nextCoord != start.selfCoord) {
-            grid[nextCoord]!!.let {
-                nextCoord = it.getOutCoord(prevCoord)
-                prevCoord = it.selfCoord
-                steps += 1
-            }
-        }
-        return steps / 2
+        val loop = findLoop(start, grid)
+        return loop.size / 2
     }
 
     fun part2(input: String): Int {
-        return 0
+        val (start, grid) = parseInput(input)
+        val loop = findLoop(start, grid)
+        val (newGrid, newLoopCoords) = expandGrid(input, grid, loop)
+        val outside = newLoopCoords.toMutableSet()
+        val deque = ArrayDeque(listOf(-1 to -1))
+        while (deque.isNotEmpty()) {
+            val (y, x) = deque.removeFirst()
+            if ((y to x) in outside) continue
+            if ((y to x) !in newGrid) continue
+
+            outside.add(y to x)
+            deque.addFirst(y - 1 to x)
+            deque.addFirst(y + 1 to x)
+            deque.addFirst(y to x - 1)
+            deque.addFirst(y to x + 1)
+        }
+
+        return newGrid.keys.subtract(outside)
+            .count { it.first % 2 == 0 && it.second % 2 == 0 }
+    }
+
+    private fun findLoop(start: Pipe, grid: Map<Coord, Pipe>): Set<Pipe> {
+        val loop = mutableSetOf(start)
+        var prevCoord = start.selfCoord
+        var nextCoord = start.outCoord
+        while (nextCoord != start.selfCoord) {
+            grid[nextCoord]!!.let {
+                loop.add(it)
+                nextCoord = it.getOutCoord(prevCoord)
+                prevCoord = it.selfCoord
+            }
+        }
+        return loop
+    }
+
+    private fun expandGrid(input: String, grid: Map<Coord, Pipe>, loop: Set<Pipe>): Pair<Map<Coord, Pipe>, Set<Coord>> {
+        val newGrid = mutableMapOf<Coord, Pipe>()
+        val newLoopCoords = mutableSetOf<Coord>()
+        val lines = input.split('\n')
+        val rows = lines.size
+        val cols = lines[0].length
+
+        for (y in -1..rows * 2) {
+            for (x in -1..cols * 2) {
+                newGrid[y to x] = Pipe('.', y to x, y to x, y to x)
+            }
+        }
+
+        val loopCoords = loop.map { it.selfCoord }.toSet()
+        for (coord in grid.keys) {
+            if (coord !in loopCoords) continue
+            val (y, x) = coord
+            newGrid[(y * 2) to (x * 2)] = grid[coord]!!
+        }
+
+        for (pipe in loop) {
+            val (y, x) = pipe.selfCoord
+            val newY = y * 2
+            val newX = x * 2
+            newLoopCoords.add(newY to newX)
+            when (pipe.type) {
+                '|' -> {
+                    newGrid[newY - 1 to newX] = Pipe('|', newY - 1 to newX, newY - 2 to newX, newY to newX)
+                    newGrid[newY + 1 to newX] = Pipe('|', newY + 1 to newX, newY to newX, newY + 2 to newX)
+                    newLoopCoords.add(newY - 1 to newX)
+                    newLoopCoords.add(newY + 1 to newX)
+                }
+
+                '-' -> {
+                    newGrid[newY to newX - 1] = Pipe('-', newY to newX - 1, newY to newX - 2, newY to newX)
+                    newGrid[newY to newX + 1] = Pipe('-', newY to newX + 1, newY to newX, newY to newX + 2)
+                    newLoopCoords.add(newY to newX - 1)
+                    newLoopCoords.add(newY to newX + 1)
+                }
+
+                'L' -> {
+                    newGrid[newY - 1 to newX] = Pipe('|', newY - 1 to newX, newY - 2 to newX, newY to newX)
+                    newGrid[newY to newX + 1] = Pipe('-', newY to newX + 1, newY to newX, newY to newX + 2)
+                    newLoopCoords.add(newY - 1 to newX)
+                    newLoopCoords.add(newY to newX + 1)
+                }
+
+                'J' -> {
+                    newGrid[newY - 1 to newX] = Pipe('|', newY - 1 to newX, newY - 2 to newX, newY to newX)
+                    newGrid[newY to newX - 1] = Pipe('-', newY to newX - 1, newY to newX - 2, newY to newX)
+                    newLoopCoords.add(newY - 1 to newX)
+                    newLoopCoords.add(newY to newX - 1)
+                }
+
+                '7' -> {
+                    newGrid[newY to newX - 1] = Pipe('-', newY to newX - 1, newY to newX - 2, newY to newX)
+                    newGrid[newY + 1 to newX] = Pipe('|', newY + 1 to newX, newY to newX, newY + 2 to newX)
+                    newLoopCoords.add(newY to newX - 1)
+                    newLoopCoords.add(newY + 1 to newX)
+                }
+
+                'F' -> {
+                    newGrid[newY to newX + 1] = Pipe('-', newY to newX + 1, newY to newX, newY to newX + 2)
+                    newGrid[newY + 1 to newX] = Pipe('|', newY + 1 to newX, newY to newX, newY + 2 to newX)
+                    newLoopCoords.add(newY to newX + 1)
+                    newLoopCoords.add(newY + 1 to newX)
+                }
+            }
+        }
+
+        return newGrid to newLoopCoords
     }
 
     private fun parseInput(input: String): Pair<Pipe, Map<Coord, Pipe>> {
@@ -31,9 +127,7 @@ class Day10 {
             val chars = lines[y].toCharArray()
             for (x in chars.indices) {
                 val coord = y to x
-                parsePipe(coord, chars[x])?.let {
-                    grid[coord] = it
-                }
+                grid[coord] = parsePipe(coord, chars[x])
 
                 if (chars[x] == 'S') {
                     startCoord = coord
@@ -43,6 +137,7 @@ class Day10 {
 
         val startPipe = parseStart(startCoord, grid)
         grid[startCoord] = startPipe
+
         return startPipe to grid
     }
 
@@ -73,10 +168,10 @@ class Day10 {
 
         if (possibleTypes.size > 1) throw IllegalArgumentException("Multiple start pipe options")
 
-        return parsePipe(coord, possibleTypes.first())!!
+        return parsePipe(coord, possibleTypes.first())
     }
 
-    private fun parsePipe(coord: Coord, type: Char): Pipe? {
+    private fun parsePipe(coord: Coord, type: Char): Pipe {
         val (y, x) = coord
         return when (type) {
             '|' -> Pipe(type, coord, y + 1 to x, y - 1 to x)
@@ -85,7 +180,7 @@ class Day10 {
             'J' -> Pipe(type, coord, y - 1 to x, y to x - 1)
             '7' -> Pipe(type, coord, y + 1 to x, y to x - 1)
             'F' -> Pipe(type, coord, y + 1 to x, y to x + 1)
-            else -> null
+            else -> Pipe(type, coord, y to x, y to x)
         }
     }
 
