@@ -65,48 +65,24 @@ class Day10 {
             newGridCoords.add(newY to newX)
             newLoopCoords.add(newY to newX)
 
-            when (pipe.type) {
-                '|' -> {
-                    newGridCoords.add(newY - 1 to newX)
-                    newGridCoords.add(newY + 1 to newX)
-                    newLoopCoords.add(newY - 1 to newX)
-                    newLoopCoords.add(newY + 1 to newX)
-                }
+            if (pipe.type in setOf('|', 'L', 'J')) {
+                newGridCoords.add(newY - 1 to newX)
+                newLoopCoords.add(newY - 1 to newX)
+            }
 
-                '-' -> {
-                    newGridCoords.add(newY to newX - 1)
-                    newGridCoords.add(newY to newX + 1)
-                    newLoopCoords.add(newY to newX - 1)
-                    newLoopCoords.add(newY to newX + 1)
-                }
+            if (pipe.type in setOf('|', '7', 'F')) {
+                newGridCoords.add(newY + 1 to newX)
+                newLoopCoords.add(newY + 1 to newX)
+            }
 
-                'L' -> {
-                    newGridCoords.add(newY - 1 to newX)
-                    newGridCoords.add(newY to newX + 1)
-                    newLoopCoords.add(newY - 1 to newX)
-                    newLoopCoords.add(newY to newX + 1)
-                }
+            if (pipe.type in setOf('-', 'J', '7')) {
+                newGridCoords.add(newY to newX - 1)
+                newLoopCoords.add(newY to newX - 1)
+            }
 
-                'J' -> {
-                    newGridCoords.add(newY - 1 to newX)
-                    newGridCoords.add(newY to newX - 1)
-                    newLoopCoords.add(newY - 1 to newX)
-                    newLoopCoords.add(newY to newX - 1)
-                }
-
-                '7' -> {
-                    newGridCoords.add(newY to newX - 1)
-                    newGridCoords.add(newY + 1 to newX)
-                    newLoopCoords.add(newY to newX - 1)
-                    newLoopCoords.add(newY + 1 to newX)
-                }
-
-                'F' -> {
-                    newGridCoords.add(newY to newX + 1)
-                    newGridCoords.add(newY + 1 to newX)
-                    newLoopCoords.add(newY to newX + 1)
-                    newLoopCoords.add(newY + 1 to newX)
-                }
+            if (pipe.type in setOf('-', 'L', 'F')) {
+                newGridCoords.add(newY to newX + 1)
+                newLoopCoords.add(newY to newX + 1)
             }
         }
 
