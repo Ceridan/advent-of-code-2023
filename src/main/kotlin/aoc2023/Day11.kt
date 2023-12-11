@@ -2,8 +2,6 @@ package aoc2023
 
 import kotlin.math.abs
 
-typealias Point = Pair<Int, Int>
-
 class Day11 {
     fun part1(input: String): Long = calculateDistances(input, 2)
 

@@ -1,13 +1,9 @@
 package aoc2023
 
 class Day09 {
-    fun part1(input: List<String>): Int {
-        return predictNextElement(input, isBackward = false)
-    }
+    fun part1(input: List<String>): Int = predictNextElement(input, isBackward = false)
 
-    fun part2(input: List<String>): Int {
-        return predictNextElement(input, isBackward = true)
-    }
+    fun part2(input: List<String>): Int = predictNextElement(input, isBackward = true)
 
     private fun predictNextElement(input: List<String>, isBackward: Boolean = false): Int {
         val histories = input.map { line -> line.split(' ').map { it.toInt() } }
