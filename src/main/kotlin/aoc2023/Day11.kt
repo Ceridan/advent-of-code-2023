@@ -5,12 +5,16 @@ import kotlin.math.abs
 typealias Point = Pair<Int, Int>
 
 class Day11 {
-    fun part1(input: String): Int {
-        val galaxies = parseInput(input).toList()
-        var distances = 0
+    fun part1(input: String): Long = calculateDistances(input, 2)
 
-        for (i in 0..<galaxies.size-1) {
-            for (j in i+1..<galaxies.size) {
+    fun part2(input: String, expansionModifier: Int): Long = calculateDistances(input, expansionModifier)
+
+    private fun calculateDistances(input: String, expansionModifier: Int = 2): Long {
+        val galaxies = parseInput(input, expansionModifier)
+        var distances = 0L
+
+        for (i in 0..<galaxies.size - 1) {
+            for (j in i + 1..<galaxies.size) {
                 val (yi, xi) = galaxies[i]
                 val (yj, xj) = galaxies[j]
                 distances += abs(yi - yj) + abs(xi - xj)
@@ -20,14 +24,9 @@ class Day11 {
         return distances
     }
 
-    fun part2(input: String): Int {
-        return 0
-    }
-
-
-    private fun parseInput(input: String): Set<Point> {
+    private fun parseInput(input: String, expansionModifier: Int = 2): List<Point> {
         val lines = input.split('\n')
-        val galaxyPoints = mutableSetOf<Point>()
+        val galaxyPoints = mutableListOf<Point>()
 
         for (y in lines.indices) {
             val chars = lines[y].toCharArray()
@@ -45,8 +44,8 @@ class Day11 {
             val (y, x) = galaxyPoint
             val rowsBefore = emptyRows.count { it < y }
             val colsBefore = emptyCols.count { it < x }
-            Pair(y + rowsBefore, x + colsBefore)
-        }.toSet()
+            Pair(y + rowsBefore * (expansionModifier - 1), x + colsBefore * (expansionModifier - 1))
+        }.toList()
     }
 }
 
@@ -55,5 +54,5 @@ fun main() {
     val input = readInputAsString("day11.txt")
 
     println("11, part 1: ${day11.part1(input)}")
-    println("11, part 2: ${day11.part2(input)}")
+    println("11, part 2: ${day11.part2(input, 1000000)}")
 }

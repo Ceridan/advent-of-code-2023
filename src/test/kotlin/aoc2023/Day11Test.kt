@@ -14,7 +14,21 @@ class Day11Test {
 
     @Test
     fun `part1 example`() {
-        val input = """
+        assertEquals(374L, day11.part1(INPUT))
+    }
+
+    @Test
+    fun `part2 example 10 times expansion`() {
+        assertEquals(1030L, day11.part2(INPUT, 10))
+    }
+
+    @Test
+    fun `part2 example 100 times expansion`() {
+        assertEquals(8410L, day11.part2(INPUT, 100))
+    }
+
+    private companion object {
+        val INPUT = """
             ...#......
             .......#..
             #.........
@@ -26,12 +40,5 @@ class Day11Test {
             .......#..
             #...#.....
         """.trimIndent()
-
-        assertEquals(374, day11.part1(input))
-    }
-
-    @Test
-    fun `part2 example`() {
-        assertEquals(0, day11.part2(""))
     }
 }
