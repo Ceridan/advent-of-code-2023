@@ -3,10 +3,7 @@ package aoc2023
 class Day12 {
     fun part1(input: String): Long {
         val (rows, groups) = parseInput(input)
-        return rows.zip(groups).sumOf { (r, c) ->
-            GLOBAL_CACHE.clear()
-            calculateArrangements(r, c)
-        }
+        return rows.zip(groups).sumOf { (r, c) -> calculateArrangements(r, c) }
     }
 
     fun part2(input: String): Long {
@@ -15,13 +12,16 @@ class Day12 {
         val expandedGroups = groups.map { group ->
             group.joinToString(separator = ",", postfix = ",").repeat(5).dropLast(1).split(',').map { it.toInt() }
         }
-        return expandedRows.zip(expandedGroups).sumOf { (r, c) ->
-            GLOBAL_CACHE.clear()
-            calculateArrangements(r, c)
-        }
+        return expandedRows.zip(expandedGroups).sumOf { (r, c) -> calculateArrangements(r, c) }
     }
 
-    private fun calculateArrangements(pattern: String, groups: List<Int>, rowIdx: Int = 0, colIdx: Int = 0): Long {
+    private fun calculateArrangements(
+        pattern: String,
+        groups: List<Int>,
+        rowIdx: Int = 0,
+        colIdx: Int = 0,
+        cache: MutableMap<Pair<Int, Int>, Long> = mutableMapOf()
+    ): Long {
         val hashIdx = pattern.drop(rowIdx).indexOf('#')
         if (colIdx == groups.size) {
             return if (hashIdx == -1) 1L else 0L
@@ -39,12 +39,15 @@ class Day12 {
                 leftDot && rightDot
             }
             .sumOf { (i, window) ->
-                GLOBAL_CACHE.getOrPut(Pair(rowIdx + window.length + i + 1, colIdx + 1)) {
+                val newRowIdx = rowIdx + window.length + i + 1
+                val newColIdx = colIdx + 1
+                cache.getOrPut(newRowIdx to newColIdx) {
                     calculateArrangements(
                         pattern,
                         groups,
-                        rowIdx + window.length + i + 1,
-                        colIdx + 1,
+                        newRowIdx,
+                        newColIdx,
+                        cache
                     )
                 }
             }
@@ -60,10 +63,6 @@ class Day12 {
             groups.add(groupString.split(',').map { it.toInt() })
         }
         return rows to groups
-    }
-
-    private companion object {
-        val GLOBAL_CACHE = mutableMapOf<Pair<Int, Int>, Long>()
     }
 }
 
