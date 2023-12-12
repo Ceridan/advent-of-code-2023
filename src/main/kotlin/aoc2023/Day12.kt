@@ -12,24 +12,23 @@ class Day12 {
         val expandedGroups = groups.map { group ->
             group.joinToString(separator = ",", postfix = ",").repeat(5).dropLast(1).split(',').map { it.toInt() }
         }
-        return expandedRows.zip(expandedGroups).sumOf { (r, c) -> calculateArrangements(r, c) }
+        return expandedRows.zip(expandedGroups).withIndex().sumOf { (i, pair) ->
+            println(i)
+            calculateArrangements(pair.first, pair.second)
+        }
     }
 
-    private fun calculateArrangements(
-        pattern: String,
-        groups: List<Int>,
-        rowIdx: Int = 0,
-        colIdx: Int = 0,
-        parts: Map<Int, Int> = mapOf()
-    ): Long {
+    private fun calculateArrangements(pattern: String, groups: List<Int>, rowIdx: Int = 0, colIdx: Int = 0): Long {
+        val hashIdx = pattern.drop(rowIdx).indexOf('#')
         if (colIdx == groups.size) {
-            val arrangement = createArrangement(pattern, parts)
-            return if (isValidArrangement(arrangement, pattern, groups)) 1L else 0L
+            return if (hashIdx == -1) 1L else 0L
         }
 
         return pattern.drop(rowIdx).windowed(groups[colIdx], 1).withIndex()
             .filter { (i, window) ->
                 if (window.any { it == '.' }) return@filter false
+                if (hashIdx > -1 && i > hashIdx) return@filter false
+
 
                 val leftIdx = rowIdx + i
                 val leftDot = leftIdx == 0 || pattern[leftIdx - 1] == '.' || pattern[leftIdx - 1] == '?'
@@ -43,30 +42,8 @@ class Day12 {
                     groups,
                     rowIdx + window.length + i + 1,
                     colIdx + 1,
-                    mapOf(rowIdx + i to window.length) + parts
                 )
             }
-    }
-
-    private fun createArrangement(pattern: String, parts: Map<Int, Int>): String {
-        val chars = ".".repeat(pattern.length).toMutableList()
-        parts.forEach { (idx, size) ->
-            for (i in idx..<idx + size) {
-                chars[i] = '#'
-            }
-        }
-        return chars.joinToString(separator = "")
-    }
-
-    private fun isValidArrangement(arrangement: String, pattern: String, groups: List<Int>): Boolean {
-        val rowGroups = arrangement.split('.').filter { it.isNotEmpty() }.map { it.length }
-        if (rowGroups != groups) return false
-
-        pattern.zip(arrangement).forEach { (p, v) ->
-            if (p != '?' && p != v) return false
-        }
-
-        return true
     }
 
     private fun parseInput(input: String): Pair<List<String>, List<List<Int>>> {
@@ -89,4 +66,3 @@ fun main() {
     println("12, part 1: ${day12.part1(input)}")
     println("12, part 2: ${day12.part2(input)}")
 }
-
