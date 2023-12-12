@@ -58,11 +58,11 @@ class Day12 {
         return chars.joinToString(separator = "")
     }
 
-    private fun isValidArrangement(variant: String, pattern: String, groups: List<Int>): Boolean {
-        val rowgroups = variant.split('.').filter { it.isNotEmpty() }.map { it.length }
-        if (rowgroups != groups) return false
+    private fun isValidArrangement(arrangement: String, pattern: String, groups: List<Int>): Boolean {
+        val rowGroups = arrangement.split('.').filter { it.isNotEmpty() }.map { it.length }
+        if (rowGroups != groups) return false
 
-        pattern.zip(variant).forEach { (p, v) ->
+        pattern.zip(arrangement).forEach { (p, v) ->
             if (p != '?' && p != v) return false
         }
 
