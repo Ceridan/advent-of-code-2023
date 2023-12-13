@@ -29,12 +29,10 @@ class Day13 {
             .map { (idx, _) -> idx }
 
         candidates@ for (idx in candidateIndexes) {
-            var i = idx - 1
-            var j = idx + 2
-            while (i >= 0 && j < pattern.size) {
+            val iRange = idx - 1 downTo 0
+            val jRange = idx + 2..<pattern.size
+            for ((i, j) in iRange.zip(jRange)) {
                 if ((pattern[i] xor pattern[j]) > 0L) continue@candidates
-                i -= 1
-                j += 1
             }
             return idx + 1
         }
@@ -49,14 +47,12 @@ class Day13 {
 
         candidates@ for ((idx, diff) in candidates) {
             var hasSmudge = diff == 1
-            var i = idx - 1
-            var j = idx + 2
-            while (i >= 0 && j < pattern.size) {
-                var nextDiff = (pattern[i] xor pattern[j]).countOneBits()
+            val iRange = idx - 1 downTo 0
+            val jRange = idx + 2..<pattern.size
+            for ((i, j) in iRange.zip(jRange)) {
+                val nextDiff = (pattern[i] xor pattern[j]).countOneBits()
                 if ((nextDiff > 1) || (nextDiff == 1 && hasSmudge)) continue@candidates
                 if (nextDiff == 1) hasSmudge = true
-                i -= 1
-                j += 1
             }
             if (hasSmudge) {
                 return idx + 1
