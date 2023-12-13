@@ -13,7 +13,35 @@ class Day13 {
     }
 
     fun part2(input: String): Long {
-        return 0L
+        val patterns = parseInput(input)
+        var mirrorSum = 0L
+        for (mirrorPattern in patterns) {
+            var newMirrorPattern: MirrorPattern? = null;
+            findOneBitDifference(mirrorPattern.rows)?.let {
+                val (rowIdx, colIdxDiff) = it
+                val newPattern = mirrorPattern.pattern.withIndex().map { (i, line) -> if (i == rowIdx) line.flipCharInPosition(line.length - colIdxDiff) else line }
+                newMirrorPattern = MirrorPattern(newPattern)
+            }
+            findOneBitDifference(mirrorPattern.cols)?.let {
+                val (colIdx, rowIdxDiff) = it
+                val newPattern = mirrorPattern.pattern.withIndex().map { (i, line) -> if (i == line.length - rowIdxDiff) line.flipCharInPosition(colIdx) else line }
+                newMirrorPattern = MirrorPattern(newPattern)
+            }
+            newMirrorPattern?.let {
+                val rowMirror = calculateReflection(it.rows) * 100
+                val colMirror = calculateReflection(it.cols)
+                mirrorSum += rowMirror + colMirror
+            }
+        }
+        return mirrorSum
+    }
+
+    private fun String.flipCharInPosition(position: Int): String {
+        fun flip(ch: Char) = if (ch == '0') '1' else '0'
+        val newCharArray = this.toCharArray().withIndex()
+            .map { (i, ch) -> if (i == position) flip(ch) else ch }
+            .toCharArray()
+        return String(newCharArray)
     }
 
     private fun calculateReflection(pattern: List<Long>): Int {
@@ -32,6 +60,20 @@ class Day13 {
             return idx + 1
         }
         return 0
+    }
+
+    private fun findOneBitDifference(pattern: List<Long>): Pair<Int, Int>? {
+        val candidateIndexes = pattern.zipWithNext().withIndex()
+            .map { (idx, pair) -> idx to (pair.first xor pair.second)}
+            .filter { (_, diff) -> diff.countOneBits() == 1 }
+
+        if (candidateIndexes.isEmpty()) return null
+        val (rowIdx, diff) = candidateIndexes.first()
+        var colIdxDiff = 1
+        while ((diff shr colIdxDiff) > 0) {
+            colIdxDiff += 1
+        }
+        return rowIdx to colIdxDiff
     }
 
     private fun parseInput(input: String): List<MirrorPattern> {
