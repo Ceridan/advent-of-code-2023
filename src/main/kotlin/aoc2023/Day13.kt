@@ -5,8 +5,8 @@ class Day13 {
         val patterns = parseInput(input)
         var mirrorSum = 0L
         for (mirrorPattern in patterns) {
-            val rowMirror = calculateReflection(mirrorPattern.pattern) * 100
-            val colMirror = calculateReflection(mirrorPattern.transpose())
+            val rowMirror = calculateReflection(mirrorPattern.rows) * 100
+            val colMirror = calculateReflection(mirrorPattern.cols)
             mirrorSum += rowMirror + colMirror
         }
         return mirrorSum
@@ -16,16 +16,16 @@ class Day13 {
         return 0L
     }
 
-    private fun calculateReflection(pattern: List<CharArray>): Int {
+    private fun calculateReflection(pattern: List<Long>): Int {
         val candidateIndexes = pattern.zipWithNext().withIndex()
-            .filter { (_, pair) -> pair.first.contentEquals(pair.second) }
+            .filter { (_, pair) -> (pair.first xor pair.second) == 0L }
             .map { (idx, _) -> idx }
 
         candidates@ for (idx in candidateIndexes) {
             var i = idx - 1
             var j = idx + 2
             while (i >= 0 && j < pattern.size) {
-                if (!pattern[i].contentEquals(pattern[j])) continue@candidates
+                if ((pattern[i] xor pattern[j]) > 0L) continue@candidates
                 i -= 1
                 j += 1
             }
@@ -37,10 +37,11 @@ class Day13 {
     private fun parseInput(input: String): List<MirrorPattern> {
         val lines = (input + "\n").split('\n')
         val mirrorPatterns = mutableListOf<MirrorPattern>()
-        var pattern = mutableListOf<CharArray>()
+        var pattern = mutableListOf<String>()
         for (line in lines) {
             if (line.isNotEmpty()) {
-                pattern.add(line.toCharArray())
+                val binaryLine = line.replace('.', '0').replace('#', '1')
+                pattern.add(binaryLine)
             } else if (pattern.isNotEmpty()) {
                 mirrorPatterns.add(MirrorPattern(pattern))
                 pattern = mutableListOf()
@@ -49,14 +50,14 @@ class Day13 {
         return mirrorPatterns
     }
 
-    class MirrorPattern(val pattern: List<CharArray>) {
-        fun transpose(): List<CharArray> {
-            val rows = pattern.size
-            val cols = pattern[0].size
+    data class MirrorPattern(val pattern: List<String>) {
+        val rows = pattern.map { it.toLong() }
+        val cols = transpose().map { it.toLong() }
 
-            return List(cols) { j ->
-                CharArray(rows) { i -> pattern[i][j] }
-            }
+        private fun transpose(): List<String> {
+            val rows = pattern.size
+            val cols = pattern[0].length
+            return List(cols) { j -> String(CharArray(rows) { i -> pattern[i][j] }) }
         }
     }
 }
