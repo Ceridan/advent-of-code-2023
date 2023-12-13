@@ -16,32 +16,11 @@ class Day13 {
         val patterns = parseInput(input)
         var mirrorSum = 0L
         for (mirrorPattern in patterns) {
-            var newMirrorPattern: MirrorPattern? = null;
-            findOneBitDifference(mirrorPattern.rows)?.let {
-                val (rowIdx, colIdxDiff) = it
-                val newPattern = mirrorPattern.pattern.withIndex().map { (i, line) -> if (i == rowIdx) line.flipCharInPosition(line.length - colIdxDiff) else line }
-                newMirrorPattern = MirrorPattern(newPattern)
-            }
-            findOneBitDifference(mirrorPattern.cols)?.let {
-                val (colIdx, rowIdxDiff) = it
-                val newPattern = mirrorPattern.pattern.withIndex().map { (i, line) -> if (i == line.length - rowIdxDiff) line.flipCharInPosition(colIdx) else line }
-                newMirrorPattern = MirrorPattern(newPattern)
-            }
-            newMirrorPattern?.let {
-                val rowMirror = calculateReflection(it.rows) * 100
-                val colMirror = calculateReflection(it.cols)
-                mirrorSum += rowMirror + colMirror
-            }
+            val rowMirror = calculateReflectionWithSmudge(mirrorPattern.rows) * 100
+            val colMirror = calculateReflectionWithSmudge(mirrorPattern.cols)
+            mirrorSum += rowMirror + colMirror
         }
         return mirrorSum
-    }
-
-    private fun String.flipCharInPosition(position: Int): String {
-        fun flip(ch: Char) = if (ch == '0') '1' else '0'
-        val newCharArray = this.toCharArray().withIndex()
-            .map { (i, ch) -> if (i == position) flip(ch) else ch }
-            .toCharArray()
-        return String(newCharArray)
     }
 
     private fun calculateReflection(pattern: List<Long>): Int {
@@ -62,18 +41,28 @@ class Day13 {
         return 0
     }
 
-    private fun findOneBitDifference(pattern: List<Long>): Pair<Int, Int>? {
-        val candidateIndexes = pattern.zipWithNext().withIndex()
-            .map { (idx, pair) -> idx to (pair.first xor pair.second)}
-            .filter { (_, diff) -> diff.countOneBits() == 1 }
+    private fun calculateReflectionWithSmudge(pattern: List<Long>): Int {
+        val candidates = pattern.zipWithNext()
+            .map { (it.first xor it.second).countOneBits() }
+            .withIndex()
+            .filter { (_, diff) -> diff <= 1 }
 
-        if (candidateIndexes.isEmpty()) return null
-        val (rowIdx, diff) = candidateIndexes.first()
-        var colIdxDiff = 1
-        while ((diff shr colIdxDiff) > 0) {
-            colIdxDiff += 1
+        candidates@ for ((idx, diff) in candidates) {
+            var hasSmudge = diff == 1
+            var i = idx - 1
+            var j = idx + 2
+            while (i >= 0 && j < pattern.size) {
+                var nextDiff = (pattern[i] xor pattern[j]).countOneBits()
+                if ((nextDiff > 1) || (nextDiff == 1 && hasSmudge)) continue@candidates
+                if (nextDiff == 1) hasSmudge = true
+                i -= 1
+                j += 1
+            }
+            if (hasSmudge) {
+                return idx + 1
+            }
         }
-        return rowIdx to colIdxDiff
+        return 0
     }
 
     private fun parseInput(input: String): List<MirrorPattern> {
@@ -93,8 +82,8 @@ class Day13 {
     }
 
     data class MirrorPattern(val pattern: List<String>) {
-        val rows = pattern.map { it.toLong() }
-        val cols = transpose().map { it.toLong() }
+        val rows = pattern.map { it.toLong(2) }
+        val cols = transpose().map { it.toLong(2) }
 
         private fun transpose(): List<String> {
             val rows = pattern.size
