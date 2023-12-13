@@ -1,27 +1,17 @@
 package aoc2023
 
 class Day13 {
-    fun part1(input: String): Long {
-        val patterns = parseInput(input)
-        var mirrorSum = 0L
-        for (mirrorPattern in patterns) {
-            val rowMirror = calculateReflection(mirrorPattern.rows) * 100
-            val colMirror = calculateReflection(mirrorPattern.cols)
-            mirrorSum += rowMirror + colMirror
+    fun part1(input: String): Long = parseInput(input)
+        .map { mirrorPattern ->
+            calculateReflection(mirrorPattern.rows) to calculateReflection(mirrorPattern.cols)
         }
-        return mirrorSum
-    }
+        .sumOf { (r, c) -> r * 100L + c }
 
-    fun part2(input: String): Long {
-        val patterns = parseInput(input)
-        var mirrorSum = 0L
-        for (mirrorPattern in patterns) {
-            val rowMirror = calculateReflectionWithSmudge(mirrorPattern.rows) * 100
-            val colMirror = calculateReflectionWithSmudge(mirrorPattern.cols)
-            mirrorSum += rowMirror + colMirror
+    fun part2(input: String): Long = parseInput(input)
+        .map { mirrorPattern ->
+            calculateReflectionWithSmudge(mirrorPattern.rows) to calculateReflectionWithSmudge(mirrorPattern.cols)
         }
-        return mirrorSum
-    }
+        .sumOf { (r, c) -> r * 100L + c }
 
     private fun calculateReflection(pattern: List<Long>): Int {
         val candidateIndexes = pattern.zipWithNext().withIndex()
