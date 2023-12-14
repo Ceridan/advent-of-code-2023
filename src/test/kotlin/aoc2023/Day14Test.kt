@@ -14,25 +14,12 @@ class Day14Test {
 
     @Test
     fun `part1 example`() {
-        val input = """
-            O....#....
-            O.OO#....#
-            .....##...
-            OO.#O....O
-            .O.....O#.
-            O.#..O.#.#
-            ..O..#O..O
-            .......O..
-            #....###..
-            #OO..#....
-        """.trimIndent()
-
-        assertEquals(136L, day14.part1(INPUT))
+        assertEquals(136, day14.part1(INPUT))
     }
 
     @Test
     fun `part2 example`() {
-        assertEquals(64L, day14.part2(INPUT, cycles=1000000000))
+        assertEquals(64, day14.part2(INPUT, cycles = 1000000000))
     }
 
     private companion object {

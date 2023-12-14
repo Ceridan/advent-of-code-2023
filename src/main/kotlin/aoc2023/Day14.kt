@@ -1,33 +1,15 @@
 package aoc2023
 
 class Day14 {
-    fun part1(input: String): Long {
-        val (platform, rows, cols) = parseInput(input)
-        val (_, totalSum) = tiltPlatformNorth(platform, rows, cols)
-        return totalSum
-    }
+    fun part1(input: String): Int = parseInput(input).tiltNorth()
 
-    fun part2(input: String, cycles: Int): Long {
-        val (initialPlatform, rows, cols) = parseInput(input)
-
-        var platform = initialPlatform
-        var score = 0L
-        var cycle = 1
-        val cycleScores = mutableListOf<Long>()
+    fun part2(input: String, cycles: Int): Int {
+        val platform = parseInput(input)
         val loopCheckSize = 20
-        while (cycle <= cycles) {
-            for (dir in listOf("north", "west", "south", "east")) {
-                val (newPlatform, newScore) = when (dir) {
-                    "north" -> tiltPlatformNorth(platform, rows, cols)
-                    "west" -> tiltPlatformWest(platform, rows, cols)
-                    "south" -> tiltPlatformSouth(platform, rows, cols)
-                    "east" -> tiltPlatformEast(platform, rows, cols)
-                    else -> throw IllegalArgumentException("Wrong direction")
-                }
-                platform = newPlatform
-                score = newScore
-            }
+        val cycleScores = mutableListOf<Int>()
 
+        while (cycleScores.size <= cycles) {
+            val score = platform.tiltCycle()
             cycleScores.add(score)
 
             val lastN = cycleScores.takeLast(loopCheckSize)
@@ -40,94 +22,12 @@ class Day14 {
                 val finalIdx = (cycles - loopStart) % loopSize + loopStart - 1
                 return cycleScores[finalIdx]
             }
-
-            cycle += 1
         }
 
-        return score
+        return cycleScores.last()
     }
 
-    private fun tiltPlatformNorth(platform: Map<Point, Char>, rows: Int, cols: Int): Pair<Map<Point, Char>, Long> {
-        val newPlatform = mutableMapOf<Point, Char>()
-        var totalSum = 0L
-        for (x in 0..<cols) {
-            var hashRockIdx = -1
-            for (y in 0..<rows) {
-                val ch = platform.getOrDefault(y to x, '.')
-                if (ch == '#') {
-                    newPlatform[y to x] = ch
-                    hashRockIdx = y
-                } else if (ch == 'O') {
-                    totalSum += rows - hashRockIdx - 1
-                    hashRockIdx += 1
-                    newPlatform[hashRockIdx to x] = ch
-                }
-            }
-        }
-        return newPlatform to totalSum
-    }
-
-    private fun tiltPlatformWest(platform: Map<Point, Char>, rows: Int, cols: Int): Pair<Map<Point, Char>, Long> {
-        val newPlatform = mutableMapOf<Point, Char>()
-        var totalSum = 0L
-        for (y in 0..<rows) {
-            var hashRockIdx = -1
-            for (x in 0..<cols) {
-                val ch = platform.getOrDefault(y to x, '.')
-                if (ch == '#') {
-                    newPlatform[y to x] = ch
-                    hashRockIdx = x
-                } else if (ch == 'O') {
-                    totalSum += rows - y
-                    hashRockIdx += 1
-                    newPlatform[y to hashRockIdx] = ch
-                }
-            }
-        }
-        return newPlatform to totalSum
-    }
-
-    private fun tiltPlatformSouth(platform: Map<Point, Char>, rows: Int, cols: Int): Pair<Map<Point, Char>, Long> {
-        val newPlatform = mutableMapOf<Point, Char>()
-        var totalSum = 0L
-        for (x in 0..<cols) {
-            var hashRockIdx = rows
-            for (y in rows - 1 downTo 0) {
-                val ch = platform.getOrDefault(y to x, '.')
-                if (ch == '#') {
-                    newPlatform[y to x] = ch
-                    hashRockIdx = y
-                } else if (ch == 'O') {
-                    totalSum += rows - hashRockIdx + 1
-                    hashRockIdx -= 1
-                    newPlatform[hashRockIdx to x] = ch
-                }
-            }
-        }
-        return newPlatform to totalSum
-    }
-
-    private fun tiltPlatformEast(platform: Map<Point, Char>, rows: Int, cols: Int): Pair<Map<Point, Char>, Long> {
-        val newPlatform = mutableMapOf<Point, Char>()
-        var totalSum = 0L
-        for (y in 0..<rows) {
-            var hashRockIdx = cols
-            for (x in cols - 1 downTo 0) {
-                val ch = platform.getOrDefault(y to x, '.')
-                if (ch == '#') {
-                    newPlatform[y to x] = ch
-                    hashRockIdx = x
-                } else if (ch == 'O') {
-                    totalSum += rows - y
-                    hashRockIdx -= 1
-                    newPlatform[y to hashRockIdx] = ch
-                }
-            }
-        }
-        return newPlatform to totalSum
-    }
-
-    private fun parseInput(input: String): Triple<Map<Point, Char>, Int, Int> {
+    private fun parseInput(input: String): Platform {
         val lines = input.split("\n").filter { it.isNotEmpty() }
         val rows = lines.size
         val cols = lines[0].length
@@ -140,7 +40,104 @@ class Day14 {
             }
         }
 
-        return Triple(platform, rows, cols)
+        return Platform(platform, rows = rows, cols = cols)
+    }
+
+    data class Platform(private val initialPlatform: Map<Point, Char>, private val rows: Int, private val cols: Int) {
+        private var platform = initialPlatform
+
+        fun get(point: Point): Char = platform.getOrDefault(point, '.')
+
+        fun tiltCycle(): Int {
+            tiltNorth()
+            tiltWest()
+            tiltSouth()
+            return tiltEast()
+        }
+
+        fun tiltNorth(): Int {
+            val newPlatform = mutableMapOf<Point, Char>()
+            var totalSum = 0
+            for (x in 0..<cols) {
+                var hashRockIdx = -1
+                for (y in 0..<rows) {
+                    val ch = platform.getOrDefault(y to x, '.')
+                    if (ch == '#') {
+                        newPlatform[y to x] = ch
+                        hashRockIdx = y
+                    } else if (ch == 'O') {
+                        totalSum += rows - hashRockIdx - 1
+                        hashRockIdx += 1
+                        newPlatform[hashRockIdx to x] = ch
+                    }
+                }
+            }
+            platform = newPlatform
+            return totalSum
+        }
+
+        private fun tiltWest(): Int {
+            val newPlatform = mutableMapOf<Point, Char>()
+            var totalSum = 0
+            for (y in 0..<rows) {
+                var hashRockIdx = -1
+                for (x in 0..<cols) {
+                    val ch = platform.getOrDefault(y to x, '.')
+                    if (ch == '#') {
+                        newPlatform[y to x] = ch
+                        hashRockIdx = x
+                    } else if (ch == 'O') {
+                        totalSum += rows - y
+                        hashRockIdx += 1
+                        newPlatform[y to hashRockIdx] = ch
+                    }
+                }
+            }
+            platform = newPlatform
+            return totalSum
+        }
+
+        private fun tiltSouth(): Int {
+            val newPlatform = mutableMapOf<Point, Char>()
+            var totalSum = 0
+            for (x in 0..<cols) {
+                var hashRockIdx = rows
+                for (y in rows - 1 downTo 0) {
+                    val ch = platform.getOrDefault(y to x, '.')
+                    if (ch == '#') {
+                        newPlatform[y to x] = ch
+                        hashRockIdx = y
+                    } else if (ch == 'O') {
+                        totalSum += rows - hashRockIdx + 1
+                        hashRockIdx -= 1
+                        newPlatform[hashRockIdx to x] = ch
+                    }
+                }
+            }
+            platform = newPlatform
+            return totalSum
+        }
+
+        private fun tiltEast(): Int {
+            val newPlatform = mutableMapOf<Point, Char>()
+            var totalSum = 0
+            for (y in 0..<rows) {
+                var hashRockIdx = cols
+                for (x in cols - 1 downTo 0) {
+                    val ch = platform.getOrDefault(y to x, '.')
+                    if (ch == '#') {
+                        newPlatform[y to x] = ch
+                        hashRockIdx = x
+                    } else if (ch == 'O') {
+                        totalSum += rows - y
+                        hashRockIdx -= 1
+                        newPlatform[y to hashRockIdx] = ch
+                    }
+                }
+            }
+            platform = newPlatform
+            return totalSum
+        }
     }
 }
 
