@@ -46,8 +46,6 @@ class Day14 {
     data class Platform(private val initialPlatform: Map<Point, Char>, private val rows: Int, private val cols: Int) {
         private var platform = initialPlatform
 
-        fun get(point: Point): Char = platform.getOrDefault(point, '.')
-
         fun tiltCycle(): Int {
             tiltNorth()
             tiltWest()
