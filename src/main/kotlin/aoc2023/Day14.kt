@@ -9,38 +9,42 @@ class Day14 {
 
     fun part2(input: String, cycles: Int): Long {
         val (initialPlatform, rows, cols) = parseInput(input)
-        // printPlatform("init", initialPlatform, rows, cols)
 
         var platform = initialPlatform
+        var score = 0L
         var cycle = 1
-        var cycleScores = mutableListOf<Long>()
-        while (cycle <= 1000) {
+        val cycleScores = mutableListOf<Long>()
+        val loopCheckSize = 20
+        while (cycle <= cycles) {
             for (dir in listOf("north", "west", "south", "east")) {
-                val (newPlatform, score) = when (dir) {
+                val (newPlatform, newScore) = when (dir) {
                     "north" -> tiltPlatformNorth(platform, rows, cols)
                     "west" -> tiltPlatformWest(platform, rows, cols)
                     "south" -> tiltPlatformSouth(platform, rows, cols)
                     "east" -> tiltPlatformEast(platform, rows, cols)
                     else -> throw IllegalArgumentException("Wrong direction")
                 }
-
-                cycleScores.add(score)
-
-                val last10 = cycleScores.takeLast(10)
-                val repeatable = cycleScores.dropLast(10).windowed(10, 1).withIndex()
-                    .filter { (_, vals) -> vals == last10 }
-
-                if (repeatable.isNotEmpty()) {
-                    val step = cycle - repeatable.last().index
-                }
-
-                // printPlatform("Cycle $cycle: $dir | $score", newPlatform, rows, cols)
                 platform = newPlatform
-                cycle += 1
+                score = newScore
             }
+
+            cycleScores.add(score)
+
+            val lastN = cycleScores.takeLast(loopCheckSize)
+            val loop = cycleScores.dropLast(loopCheckSize).windowed(loopCheckSize, 1).withIndex()
+                .firstOrNull { (_, vals) -> vals == lastN }
+
+            loop?.let {
+                val loopStart = it.index
+                val loopSize = cycleScores.size - loopCheckSize - loopStart
+                val finalIdx = (cycles - loopStart) % loopSize + loopStart - 1
+                return cycleScores[finalIdx]
+            }
+
+            cycle += 1
         }
 
-        return 0L
+        return score
     }
 
     private fun tiltPlatformNorth(platform: Map<Point, Char>, rows: Int, cols: Int): Pair<Map<Point, Char>, Long> {
@@ -121,18 +125,6 @@ class Day14 {
             }
         }
         return newPlatform to totalSum
-    }
-
-    private fun printPlatform(name: String, platform: Map<Point, Char>, rows: Int, cols: Int) {
-        println("=========================")
-        println("[$name]")
-        for (y in 0..<rows) {
-            for (x in 0..<cols) {
-                print(platform.getOrDefault(y to x, '.'))
-            }
-            println()
-        }
-        println("=========================")
     }
 
     private fun parseInput(input: String): Triple<Map<Point, Char>, Int, Int> {
