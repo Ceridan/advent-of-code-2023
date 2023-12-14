@@ -2,31 +2,45 @@ package aoc2023
 
 class Day14 {
     fun part1(input: String): Long {
-        val (rows, cols, platform) = parseInput(input)
+        val (platform, rows, cols) = parseInput(input)
         val (_, totalSum) = tiltPlatformNorth(platform, rows, cols)
         return totalSum
     }
 
     fun part2(input: String, cycles: Int): Long {
-        val (rows, cols, platform) = parseInput(input)
-        val (pN1, g) = tiltPlatformNorth(platform, rows, cols)
-        val (pW1, _) = tiltPlatformWest(pN1, rows, cols)
-        val (pS1, _) = tiltPlatformSouth(pW1, rows, cols)
-        val (pE1, _) = tiltPlatformEast(pS1, rows, cols)
+        val (initialPlatform, rows, cols) = parseInput(input)
+        // printPlatform("init", initialPlatform, rows, cols)
 
-        val (pN2, sN2) = tiltPlatformNorth(pE1, rows, cols)
-        val (pW2, sW2) = tiltPlatformWest(pN2, rows, cols)
-        val (pS2, sS2) = tiltPlatformSouth(pW2, rows, cols)
-        val (_, sE2) = tiltPlatformEast(pS2, rows, cols)
+        var platform = initialPlatform
+        var cycle = 1
+        var cycleScores = mutableListOf<Long>()
+        while (cycle <= 1000) {
+            for (dir in listOf("north", "west", "south", "east")) {
+                val (newPlatform, score) = when (dir) {
+                    "north" -> tiltPlatformNorth(platform, rows, cols)
+                    "west" -> tiltPlatformWest(platform, rows, cols)
+                    "south" -> tiltPlatformSouth(platform, rows, cols)
+                    "east" -> tiltPlatformEast(platform, rows, cols)
+                    else -> throw IllegalArgumentException("Wrong direction")
+                }
 
-        val dir = cycles % 4
+                cycleScores.add(score)
 
-        return when (dir) {
-            0 -> sN2
-            1 -> sW2
-            2 -> sS2
-            else -> sE2
+                val last10 = cycleScores.takeLast(10)
+                val repeatable = cycleScores.dropLast(10).windowed(10, 1).withIndex()
+                    .filter { (_, vals) -> vals == last10 }
+
+                if (repeatable.isNotEmpty()) {
+                    val step = cycle - repeatable.last().index
+                }
+
+                // printPlatform("Cycle $cycle: $dir | $score", newPlatform, rows, cols)
+                platform = newPlatform
+                cycle += 1
+            }
         }
+
+        return 0L
     }
 
     private fun tiltPlatformNorth(platform: Map<Point, Char>, rows: Int, cols: Int): Pair<Map<Point, Char>, Long> {
@@ -58,11 +72,11 @@ class Day14 {
                 val ch = platform.getOrDefault(y to x, '.')
                 if (ch == '#') {
                     newPlatform[y to x] = ch
-                    hashRockIdx = y
+                    hashRockIdx = x
                 } else if (ch == 'O') {
                     totalSum += rows - y
                     hashRockIdx += 1
-                    newPlatform[y to hashRockIdx + x] = ch
+                    newPlatform[y to hashRockIdx] = ch
                 }
             }
         }
@@ -98,18 +112,30 @@ class Day14 {
                 val ch = platform.getOrDefault(y to x, '.')
                 if (ch == '#') {
                     newPlatform[y to x] = ch
-                    hashRockIdx = y
+                    hashRockIdx = x
                 } else if (ch == 'O') {
                     totalSum += rows - y
                     hashRockIdx -= 1
-                    newPlatform[y to hashRockIdx + x] = ch
+                    newPlatform[y to hashRockIdx] = ch
                 }
             }
         }
         return newPlatform to totalSum
     }
 
-    private fun parseInput(input: String): Triple<Int, Int, Map<Point, Char>> {
+    private fun printPlatform(name: String, platform: Map<Point, Char>, rows: Int, cols: Int) {
+        println("=========================")
+        println("[$name]")
+        for (y in 0..<rows) {
+            for (x in 0..<cols) {
+                print(platform.getOrDefault(y to x, '.'))
+            }
+            println()
+        }
+        println("=========================")
+    }
+
+    private fun parseInput(input: String): Triple<Map<Point, Char>, Int, Int> {
         val lines = input.split("\n").filter { it.isNotEmpty() }
         val rows = lines.size
         val cols = lines[0].length
@@ -122,11 +148,7 @@ class Day14 {
             }
         }
 
-        return Triple(rows, cols, platform)
-    }
-
-    enum class Direction {
-        NORTH, WEST, SOUTH, EAST
+        return Triple(platform, rows, cols)
     }
 }
 
