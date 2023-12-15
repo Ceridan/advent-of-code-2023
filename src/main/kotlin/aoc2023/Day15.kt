@@ -4,56 +4,48 @@ class Day15 {
     fun part1(input: String): Int = input
         .split(',', '\n')
         .filter { it.isNotEmpty() }
-        .sumOf { LensHashMap.getHash(it) }
+        .sumOf { getHash(it) }
 
     fun part2(input: String): Int {
+        val lensHashMap = IntRange(0, 255).map { mutableListOf<Pair<String, Int>>() }.toMutableList()
         val instructions = input.split(',', '\n').filter { it.isNotEmpty() }
 
         for (instruction in instructions) {
+            val lens = instruction.takeWhile { it != '=' && it != '-' }
+            val hash = getHash(lens)
+            val lensList = lensHashMap[hash]
+
             if (instruction.endsWith('-')) {
-                LensHashMap.removeLens(instruction.dropLast(1))
+                lensList.removeIf { it.first == lens }
             } else {
-                val (lens, focalLength) = instruction.split('=')
-                LensHashMap.putOrReplaceLens(lens, focalLength.toInt())
+                val focalLength = instruction.split('=')[1].toInt()
+                val idx = lensList.indexOfFirst { it.first == lens }
+                if (idx == -1) {
+                    lensList.add(lens to focalLength)
+                } else {
+                    lensList[idx] = lens to focalLength
+                }
             }
         }
 
-        return LensHashMap.calculateFocusingPower()
+        return lensHashMap
+            .withIndex()
+            .map { (boxIdx, lenses) ->
+                lenses.withIndex()
+                    .map { Lens(boxId = boxIdx, slotNumber = it.index + 1, focalLength = it.value.second) }
+            }
+            .flatten()
+            .sumOf { it.calculateFocusPower() }
     }
 
-    object LensHashMap {
-        private var counter = 0
-        private val boxes = IntRange(0, 255).map { it to mutableMapOf<String, Pair<Int, Int>>() }
-            .associateBy({ it.first }, { it.second })
+    private fun getHash(value: String): Int {
+        var hash = 0
+        value.forEach { hash = (hash + it.code) * 17 % 256 }
+        return hash
+    }
 
-        fun putOrReplaceLens(lens: String, focalLength: Int) {
-            val hash = getHash(lens)
-            boxes[hash]!!.let {
-                val idx = it[lens]?.first ?: counter++
-                it[lens] = idx to focalLength
-            }
-        }
-
-        fun removeLens(lens: String) {
-            val hash = getHash(lens)
-            boxes[hash]!!.remove(lens)
-        }
-
-        fun calculateFocusingPower(): Int = IntRange(0, 255)
-            .sumOf { boxId -> calculateBoxFocusingPower(boxId) }
-
-        private fun calculateBoxFocusingPower(boxId: Int): Int = boxes[boxId]!!.values
-            .sortedBy { (idxInBox, _) -> idxInBox }
-            .map { (_, focalLength) -> focalLength }
-            .withIndex()
-            .sumOf { (idx, focalLength) -> (boxId + 1) * (idx + 1) * focalLength }
-
-
-        fun getHash(value: String): Int {
-            var hash = 0
-            value.forEach { hash = (hash + it.code) * 17 % 256 }
-            return hash
-        }
+    data class Lens(val boxId: Int, val slotNumber: Int, val focalLength: Int) {
+        fun calculateFocusPower(): Int = (boxId + 1) * slotNumber * focalLength
     }
 }
 
