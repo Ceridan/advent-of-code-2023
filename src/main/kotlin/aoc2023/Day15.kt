@@ -13,17 +13,17 @@ class Day15 {
         for (instruction in instructions) {
             val lens = instruction.takeWhile { it != '=' && it != '-' }
             val hash = getHash(lens)
-            val lensList = lensHashMap[hash]
+            val lenses = lensHashMap[hash]
 
             if (instruction.endsWith('-')) {
-                lensList.removeIf { it.first == lens }
+                lenses.removeIf { it.first == lens }
             } else {
                 val focalLength = instruction.split('=')[1].toInt()
-                val idx = lensList.indexOfFirst { it.first == lens }
+                val idx = lenses.indexOfFirst { it.first == lens }
                 if (idx == -1) {
-                    lensList.add(lens to focalLength)
+                    lenses.add(lens to focalLength)
                 } else {
-                    lensList[idx] = lens to focalLength
+                    lenses[idx] = lens to focalLength
                 }
             }
         }
