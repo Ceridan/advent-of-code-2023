@@ -19,7 +19,7 @@ class Day16Test {
 
     @Test
     fun `part2 example`() {
-        assertEquals(0, day16.part2(INPUT))
+        assertEquals(51, day16.part2(INPUT))
     }
 
     private companion object {

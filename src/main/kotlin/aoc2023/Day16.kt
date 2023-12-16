@@ -1,11 +1,37 @@
 package aoc2023
 
+import kotlin.math.max
+
 class Day16 {
     fun part1(input: String): Int {
         val grid = parseInput(input)
-        var energized = mutableSetOf<Point>()
+        return calculateConfiguration(grid, DirectedPoint(0 to 0, 'E'))
+    }
+
+    fun part2(input: String): Int {
+        val grid = parseInput(input)
+        val maxY = grid.keys.maxOf { it.first }
+        val maxX = grid.keys.maxOf { it.second }
+        var bestConfigurationScore = 0
+        for (y in 0..maxY) {
+            bestConfigurationScore =
+                max(bestConfigurationScore, calculateConfiguration(grid, DirectedPoint(y to 0, 'E')))
+            bestConfigurationScore =
+                max(bestConfigurationScore, calculateConfiguration(grid, DirectedPoint(y to maxX, 'W')))
+        }
+        for (x in 0..maxX) {
+            bestConfigurationScore =
+                max(bestConfigurationScore, calculateConfiguration(grid, DirectedPoint(0 to x, 'S')))
+            bestConfigurationScore =
+                max(bestConfigurationScore, calculateConfiguration(grid, DirectedPoint(maxY to x, 'N')))
+        }
+        return bestConfigurationScore
+    }
+
+    private fun calculateConfiguration(grid: Map<Point, Char>, entryBeam: DirectedPoint): Int {
+        val energized = mutableSetOf<Point>()
         val known = mutableSetOf<DirectedPoint>()
-        val queue = ArrayDeque(listOf(DirectedPoint(0 to 0, 'E')))
+        val queue = ArrayDeque(listOf(entryBeam))
         while (queue.isNotEmpty()) {
             val beam = queue.removeFirst()
             if (known.contains(beam)) continue
@@ -16,33 +42,14 @@ class Day16 {
             beam1?.let { queue.add(beam1) }
             beam2?.let { queue.add(beam2) }
         }
-        printEnergized(grid, energized)
         return energized.size
-    }
-
-    fun part2(input: String): Int {
-        return 0
-    }
-
-    private fun printEnergized(grid: Map<Point, Char>, energized: Set<Point>) {
-        println()
-        val maxY = grid.keys.maxOf { it.first }
-        val maxX = grid.keys.maxOf { it.second }
-        for (y in 0..maxY) {
-            for (x in 0..maxX) {
-                if (energized.contains(y to x)) print('#')
-                else print(grid[y to x])
-            }
-            println()
-        }
-        println()
     }
 
     private fun followBeamUntilSplit(
         grid: Map<Point, Char>,
         beam: DirectedPoint
     ): Triple<DirectedPoint?, DirectedPoint?, Set<Point>> {
-        var energized = mutableSetOf<Point>()
+        val energized = mutableSetOf<Point>()
         var current = beam
         while (grid.containsKey(current.point)) {
             energized.add(current.point)
