@@ -26,7 +26,7 @@ class Day10 {
         }
 
         return newGridPoints.subtract(outside)
-            .count { it.first % 2 == 0 && it.second % 2 == 0 }
+            .count { it.y % 2 == 0 && it.x % 2 == 0 }
     }
 
     private fun findLoop(start: Pipe, grid: Map<Point, Pipe>): Set<Pipe> {

@@ -35,8 +35,8 @@ class Day11 {
             }
         }
 
-        val emptyRows = IntRange(0, lines.size - 1).subtract(galaxyPoints.map { it.first }.toSet())
-        val emptyCols = IntRange(0, lines[0].length - 1).subtract(galaxyPoints.map { it.second }.toSet())
+        val emptyRows = IntRange(0, lines.size - 1).subtract(galaxyPoints.map { it.y }.toSet())
+        val emptyCols = IntRange(0, lines[0].length - 1).subtract(galaxyPoints.map { it.x }.toSet())
 
         return galaxyPoints.map { galaxyPoint ->
             val (y, x) = galaxyPoint

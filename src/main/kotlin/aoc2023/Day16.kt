@@ -10,8 +10,8 @@ class Day16 {
 
     fun part2(input: String): Int {
         val grid = parseInput(input)
-        val maxY = grid.keys.maxOf { it.first }
-        val maxX = grid.keys.maxOf { it.second }
+        val maxY = grid.keys.maxOf { it.y }
+        val maxX = grid.keys.maxOf { it.x }
         var bestConfigurationScore = 0
         val cache = mutableMapOf<DirectedPoint, Triple<DirectedPoint?, DirectedPoint?, Set<Point>>>()
         for (y in 0..maxY) {
@@ -111,12 +111,7 @@ class Day16 {
     }
 
     data class DirectedPoint(val point: Point, val direction: Char) {
-        fun move(newDirection: Char): DirectedPoint {
-            val (y, x) = point
-            val newY = DIRECTION_TRANSFORMS[newDirection]!!.first + y
-            val newX = DIRECTION_TRANSFORMS[newDirection]!!.second + x
-            return DirectedPoint(newY to newX, newDirection)
-        }
+        fun move(newDirection: Char) = DirectedPoint(point + DIRECTION_TRANSFORMS[newDirection]!!, newDirection)
 
         private companion object {
             val DIRECTION_TRANSFORMS = mapOf(
