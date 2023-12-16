@@ -13,22 +13,27 @@ class Day16 {
         val maxY = grid.keys.maxOf { it.first }
         val maxX = grid.keys.maxOf { it.second }
         var bestConfigurationScore = 0
+        val cache = mutableMapOf<DirectedPoint, Triple<DirectedPoint?, DirectedPoint?, Set<Point>>>()
         for (y in 0..maxY) {
             bestConfigurationScore =
-                max(bestConfigurationScore, calculateConfiguration(grid, DirectedPoint(y to 0, 'E')))
+                max(bestConfigurationScore, calculateConfiguration(grid, DirectedPoint(y to 0, 'E'), cache))
             bestConfigurationScore =
-                max(bestConfigurationScore, calculateConfiguration(grid, DirectedPoint(y to maxX, 'W')))
+                max(bestConfigurationScore, calculateConfiguration(grid, DirectedPoint(y to maxX, 'W'), cache))
         }
         for (x in 0..maxX) {
             bestConfigurationScore =
-                max(bestConfigurationScore, calculateConfiguration(grid, DirectedPoint(0 to x, 'S')))
+                max(bestConfigurationScore, calculateConfiguration(grid, DirectedPoint(0 to x, 'S'), cache))
             bestConfigurationScore =
-                max(bestConfigurationScore, calculateConfiguration(grid, DirectedPoint(maxY to x, 'N')))
+                max(bestConfigurationScore, calculateConfiguration(grid, DirectedPoint(maxY to x, 'N'), cache))
         }
         return bestConfigurationScore
     }
 
-    private fun calculateConfiguration(grid: Map<Point, Char>, entryBeam: DirectedPoint): Int {
+    private fun calculateConfiguration(
+        grid: Map<Point, Char>,
+        entryBeam: DirectedPoint,
+        cache: MutableMap<DirectedPoint, Triple<DirectedPoint?, DirectedPoint?, Set<Point>>> = mutableMapOf()
+    ): Int {
         val energized = mutableSetOf<Point>()
         val known = mutableSetOf<DirectedPoint>()
         val queue = ArrayDeque(listOf(entryBeam))
@@ -37,7 +42,7 @@ class Day16 {
             if (known.contains(beam)) continue
             known.add(beam)
 
-            val (beam1, beam2, beamEnergized) = followBeamUntilSplit(grid, beam)
+            val (beam1, beam2, beamEnergized) = cache.getOrPut(beam) { followBeamUntilSplit(grid, beam) }
             energized.addAll(beamEnergized)
             beam1?.let { queue.add(beam1) }
             beam2?.let { queue.add(beam2) }
