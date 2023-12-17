@@ -1,6 +1,6 @@
 package aoc2023
 
-import java.util.PriorityQueue
+import java.util.*
 
 class Day17 {
     fun part1(input: String): Int {
@@ -34,32 +34,31 @@ class Day17 {
         return -1
     }
 
-    private fun calculateNextItems(grid: Map<Point, Int>, item: QueueItem, minStreak: Int, maxStreak: Int): List<QueueItem> {
+    private fun calculateNextItems(
+        grid: Map<Point, Int>,
+        item: QueueItem,
+        minStreak: Int,
+        maxStreak: Int
+    ): List<QueueItem> {
         val nextItems = mutableListOf<QueueItem>()
-        val diff = item.state.point - item.state.prevPoint
-        if (item.state.streak in  1..<minStreak) {
-            val streakDiff = minStreak - item.state.streak
-            val nextPoint = item.state.point + diff.scale(streakDiff)
-            if (grid.containsKey(nextPoint)) {
-                val diffCost = IntRange(1, streakDiff).sumOf {
-                    val p = item.state.point + diff.scale(it)
-                    grid[p]!!
-                }
-                return listOf(QueueItem(StreakState(nextPoint, nextPoint - diff, minStreak), item.cost + diffCost))
+        val currentDirection = (item.state.point - item.state.prevPoint).normalize()
+        val possibleDirections =
+            listOf(Pair(-1, 0), Pair(1, 0), Pair(0, -1), Pair(0, 1)).filter { it != currentDirection.scale(-1) }
+
+        for (direction in possibleDirections) {
+            if (direction == currentDirection && item.state.streak == maxStreak) continue
+            val newStreak = if (direction == currentDirection) item.state.streak + 1 else minStreak
+            val streakDiff = if (direction == currentDirection) 1 else minStreak
+            val newPoint = item.state.point + direction.scale(streakDiff)
+            if (!grid.containsKey(newPoint)) continue
+            val newCost = item.cost + IntRange(1, streakDiff).sumOf {
+                val tmpPoint = item.state.point + direction.scale(it)
+                grid[tmpPoint]!!
             }
-            return listOf()
+            val newStreakState = StreakState(newPoint, item.state.point, newStreak)
+            nextItems.add(QueueItem(newStreakState, newCost))
         }
 
-        val neighbors = listOf(Pair(-1, 0), Pair(1, 0), Pair(0, -1), Pair(0, 1))
-
-        for (neighbor in neighbors) {
-            if (neighbor == diff && item.state.streak == maxStreak) continue
-            val newPoint = item.state.point + neighbor
-            if (newPoint == item.state.prevPoint || !grid.containsKey(newPoint)) continue
-            val newStreak = if (neighbor == diff) item.state.streak + 1 else 1
-            val newState = StreakState(newPoint, item.state.point, newStreak)
-            nextItems.add(QueueItem(newState, item.cost + grid[newPoint]!!))
-        }
         return nextItems
     }
 
