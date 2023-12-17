@@ -7,6 +7,7 @@ typealias Point = Pair<Int, Int>
 val Point.y get() = this.first
 val Point.x get() = this.second
 operator fun Point.plus(other: Point) = Point(y + other.y, x + other.x)
+operator fun Point.minus(other: Point) = Point(y - other.y, x - other.x)
 
 fun readInputAsString(filename: String): String = getFile(filename).readText()
 
