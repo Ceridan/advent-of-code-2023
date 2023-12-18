@@ -1,10 +1,10 @@
 package aoc2023
 
 class Day18 {
-    fun part1(input: List<String>): Int {
+    fun part1(input: List<String>): Long {
         val instructions = parseInput(input)
         var currentPoint = 0 to 0
-        val digSite = mutableSetOf(currentPoint)
+        val digSite = mutableListOf(currentPoint)
         for (instruction in instructions) {
             IntRange(1, instruction.length).forEach { _ ->
                 currentPoint += instruction.direction
@@ -18,29 +18,21 @@ class Day18 {
         return 0
     }
 
-    private fun calculateInterior(digSite: Set<Point>): Int {
-        val minY = digSite.minOf { it.y } - 1
-        val maxY = digSite.maxOf { it.y } + 1
-        val minX = digSite.minOf { it.x } - 1
-        val maxX = digSite.maxOf { it.x } + 1
-        val queue = ArrayDeque(listOf(minY to minX))
-        val visited = mutableSetOf<Point>()
 
-        while (queue.isNotEmpty()) {
-            val point = queue.removeFirst()
-            if (point in visited) continue
-            if (point in digSite) continue
-            visited.add(point)
+    // https://en.wikipedia.org/wiki/Shoelace_formula
+    private fun calculateArea(digSite: List<Point>): Double {
+        val doubleArea = (digSite + listOf(digSite[0])).windowed(2).sumOf { (p1, p2) ->  1L * p1.x * p2.y - p1.y * p2.x }
+        return doubleArea / 2.0
+    }
 
-            for (dir in listOf(-1 to 0, 1 to 0, 0 to -1, 0 to 1)) {
-                val nextPoint = point + dir
-                if (nextPoint.y in minY..maxY && nextPoint.x in minX..maxX) {
-                    queue.add(nextPoint)
-                }
-            }
-        }
+    // https://en.wikipedia.org/wiki/Pick%27s_theorem
+    private fun calculateInnerPoints(borderSize: Long, area: Double): Double = (area - borderSize / 2.0 + 1)
 
-        return (maxY - minY + 1) * (maxX - minX + 1) - visited.size
+    private fun calculateInterior(digSite: List<Point>): Long {
+        val area = calculateArea(digSite)
+        val border = digSite.size.toLong()
+        val inner = calculateInnerPoints(border, area)
+        return (border + inner).toLong()
     }
 
     private fun parseInput(input: List<String>): List<DigInstruction> {
