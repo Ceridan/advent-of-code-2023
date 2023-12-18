@@ -2,11 +2,11 @@ package aoc2023
 
 class Day18 {
     fun part1(input: List<String>): Long {
-        val instructions = parseInput(input)
+        val instructions = parseInput(input).map { it.instruction }
         var currentPoint = 0 to 0
         val digSite = mutableListOf(currentPoint)
         for (instruction in instructions) {
-            IntRange(1, instruction.length).forEach { _ ->
+            LongRange(1, instruction.length).forEach { _ ->
                 currentPoint += instruction.direction
                 digSite.add(currentPoint)
             }
@@ -18,6 +18,12 @@ class Day18 {
         return 0
     }
 
+    private fun calculateInterior(digSite: List<Point>): Long {
+        val area = calculateArea(digSite)
+        val border = digSite.size.toLong()
+        val inner = calculateInnerPoints(border, area)
+        return (border + inner).toLong()
+    }
 
     // https://en.wikipedia.org/wiki/Shoelace_formula
     private fun calculateArea(digSite: List<Point>): Double {
@@ -28,15 +34,8 @@ class Day18 {
     // https://en.wikipedia.org/wiki/Pick%27s_theorem
     private fun calculateInnerPoints(borderSize: Long, area: Double): Double = (area - borderSize / 2.0 + 1)
 
-    private fun calculateInterior(digSite: List<Point>): Long {
-        val area = calculateArea(digSite)
-        val border = digSite.size.toLong()
-        val inner = calculateInnerPoints(border, area)
-        return (border + inner).toLong()
-    }
-
-    private fun parseInput(input: List<String>): List<DigInstruction> {
-        val instructions = mutableListOf<DigInstruction>()
+    private fun parseInput(input: List<String>): List<ColoredDigInstruction> {
+        val instructions = mutableListOf<ColoredDigInstruction>()
         for (instruction in input) {
             val (dir, length, color) = instruction.split(' ')
             val direction = when (dir) {
@@ -46,12 +45,14 @@ class Day18 {
                 "R" -> 0 to 1
                 else -> throw IllegalArgumentException("Unknown direction $dir")
             }
-            instructions.add(DigInstruction(direction, length.toInt(), color.drop(1).dropLast(1)))
+            val digInstruction = DigInstruction(direction, length.toLong())
+            instructions.add(ColoredDigInstruction(digInstruction, color.drop(1).dropLast(1)))
         }
         return instructions
     }
 
-    data class DigInstruction(val direction: Point, val length: Int, val color: String)
+    data class DigInstruction(val direction: Point, val length: Long)
+    data class ColoredDigInstruction(val instruction: DigInstruction, val color: String)
 }
 
 fun main() {
