@@ -6,7 +6,7 @@ class Day18 {
         var currentPoint = 0 to 0
         val digSite = mutableListOf(currentPoint)
         for (instruction in instructions) {
-            LongRange(1, instruction.length).forEach { _ ->
+            LongRange(1, instruction.distance).forEach { _ ->
                 currentPoint += instruction.direction
                 digSite.add(currentPoint)
             }
@@ -15,7 +15,16 @@ class Day18 {
     }
 
     fun part2(input: List<String>): Long {
-        return 0
+        val instructions = parseInput(input).map { it.decodeColor() }
+        var currentPoint = 0 to 0
+        val digSite = mutableListOf(currentPoint)
+        for (instruction in instructions) {
+            LongRange(1, instruction.distance).forEach { _ ->
+                currentPoint += instruction.direction
+                digSite.add(currentPoint)
+            }
+        }
+        return calculateInterior(digSite)
     }
 
     private fun calculateInterior(digSite: List<Point>): Long {
@@ -51,8 +60,20 @@ class Day18 {
         return instructions
     }
 
-    data class DigInstruction(val direction: Point, val length: Long)
-    data class ColoredDigInstruction(val instruction: DigInstruction, val color: String)
+    data class DigInstruction(val direction: Point, val distance: Long)
+    data class ColoredDigInstruction(val instruction: DigInstruction, val color: String) {
+        fun decodeColor(): DigInstruction {
+            val distance = color.drop(1).dropLast(1)
+            val direction = when(color.last()) {
+                '0' -> 0 to 1
+                '1' -> 1 to 0
+                '2' -> 0 to -1
+                '3' -> -1 to 0
+                else -> throw IllegalArgumentException("Unknown direction code ${color.last()}")
+            }
+            return DigInstruction(direction, distance.toLong(16))
+        }
+    }
 }
 
 fun main() {

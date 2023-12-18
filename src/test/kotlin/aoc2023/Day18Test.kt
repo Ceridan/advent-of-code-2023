@@ -14,7 +14,7 @@ class Day18Test {
 
     @Test
     fun `part1 example`() {
-        assertEquals(62, day18.part1(INPUT))
+        assertEquals(62L, day18.part1(INPUT))
     }
 
     @Test
