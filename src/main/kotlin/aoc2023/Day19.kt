@@ -55,9 +55,11 @@ class Day19 {
 
     data class Workflow(val name: String, private val conditions: List<Condition>) {
         private val fnConditions = mutableListOf<(XmasPart) -> String>()
+        private val compactedConditions = mutableListOf<Condition>()
 
         init {
-            fnConditions.addAll(conditions.map { parseRawCondition(it) })
+            compactedConditions.addAll(compactConditions(conditions))
+            fnConditions.addAll(compactedConditions.map { parseRawCondition(it) })
         }
 
         fun checkPart(part: XmasPart): String {
@@ -67,6 +69,14 @@ class Day19 {
             }
 
             throw IllegalStateException("No conditions are applicable. Workflow: $name, XmasPart: $part")
+        }
+
+        private fun compactConditions(conditions: List<Condition>): List<Condition> {
+            val terminalCondition = conditions.first { it is TerminalCondition }
+            val compactedConditions = conditions.asReversed().dropWhile { it.result == terminalCondition.result }.toMutableList()
+            compactedConditions.reverse()
+            compactedConditions.add(terminalCondition)
+            return compactedConditions
         }
 
         private fun parseRawCondition(condition: Condition): (XmasPart) -> String {
