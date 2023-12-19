@@ -35,51 +35,72 @@ class Day19 {
                 parts.add(XmasPart(x = x.toInt(), m = m.toInt(), a = a.toInt(), s = s.toInt()))
                 continue
             }
-            val (name, conditions) = workflowRegex.find(line)!!.destructured
-            workflows[name] = Workflow(name, conditions.split(','))
+            val (name, rawConditions) = workflowRegex.find(line)!!.destructured
+            val conditions = rawConditions.split(',').map {
+                val condParts = it.split(':')
+                if (condParts.size == 1) {
+                    TerminalCondition(condParts[0])
+                } else {
+                    val param = condParts[0].take(1)[0]
+                    val op = condParts[0].drop(1).take(1)[0]
+                    val value = condParts[0].drop(2).toInt()
+                    val result = condParts[1]
+                    WorkflowCondition(param, op, value, result)
+                }
+            }
+            workflows[name] = Workflow(name, conditions)
         }
         return workflows to parts
     }
 
-    data class Workflow(val name: String, private val rawConditions: List<String>) {
-        private val conditions = mutableListOf<(XmasPart) -> String>()
+    data class Workflow(val name: String, private val conditions: List<Condition>) {
+        private val fnConditions = mutableListOf<(XmasPart) -> String>()
 
         init {
-            conditions.addAll(rawConditions.map { parseCondition(it) })
+            fnConditions.addAll(conditions.map { parseRawCondition(it) })
         }
 
         fun checkPart(part: XmasPart): String {
-            for (cond in conditions) {
-                val result = cond(part)
+            for (fnCond in fnConditions) {
+                val result = fnCond(part)
                 if (result != "C") return result
             }
 
             throw IllegalStateException("No conditions are applicable. Workflow: $name, XmasPart: $part")
         }
 
-        private fun parseCondition(rawCondition: String): (XmasPart) -> String {
-            val condParts = rawCondition.split(':')
-            if (condParts.size == 1) {
-                return { _: XmasPart -> condParts[0] }
+        private fun parseRawCondition(condition: Condition): (XmasPart) -> String {
+            if (condition is TerminalCondition) {
+                return { _: XmasPart -> condition.result }
             }
 
-            val op = condParts[0].take(2)
-            val value = condParts[0].drop(2).toInt()
-            val result = condParts[1]
+            val workflowCondition = condition as WorkflowCondition
 
-            return when (op) {
-                "x<" -> { xmas: XmasPart -> if (xmas.x < value) result else "C" }
-                "x>" -> { xmas: XmasPart -> if (xmas.x > value) result else "C" }
-                "m<" -> { xmas: XmasPart -> if (xmas.m < value) result else "C" }
-                "m>" -> { xmas: XmasPart -> if (xmas.m > value) result else "C" }
-                "a<" -> { xmas: XmasPart -> if (xmas.a < value) result else "C" }
-                "a>" -> { xmas: XmasPart -> if (xmas.a > value) result else "C" }
-                "s<" -> { xmas: XmasPart -> if (xmas.s < value) result else "C" }
-                "s>" -> { xmas: XmasPart -> if (xmas.s > value) result else "C" }
-                else -> throw IllegalArgumentException("Unknown operation: $op")
+            return when (val paramOpPair = "${workflowCondition.param}${workflowCondition.op}") {
+                "x<" -> { xmas: XmasPart -> if (xmas.x < workflowCondition.value) workflowCondition.result else "C" }
+                "x>" -> { xmas: XmasPart -> if (xmas.x > workflowCondition.value) workflowCondition.result else "C" }
+                "m<" -> { xmas: XmasPart -> if (xmas.m < workflowCondition.value) workflowCondition.result else "C" }
+                "m>" -> { xmas: XmasPart -> if (xmas.m > workflowCondition.value) workflowCondition.result else "C" }
+                "a<" -> { xmas: XmasPart -> if (xmas.a < workflowCondition.value) workflowCondition.result else "C" }
+                "a>" -> { xmas: XmasPart -> if (xmas.a > workflowCondition.value) workflowCondition.result else "C" }
+                "s<" -> { xmas: XmasPart -> if (xmas.s < workflowCondition.value) workflowCondition.result else "C" }
+                "s>" -> { xmas: XmasPart -> if (xmas.s > workflowCondition.value) workflowCondition.result else "C" }
+                else -> throw IllegalArgumentException("Unknown operation: $paramOpPair")
             }
         }
     }
+
+    interface Condition {
+        val result: String
+    }
+
+    data class TerminalCondition(override val result: String) : Condition
+    data class WorkflowCondition(
+        val param: Char,
+        val op: Char,
+        val value: Int,
+        override val result: String,
+    ) : Condition
 
     data class XmasPart(val x: Int, val m: Int, val a: Int, val s: Int) {
         fun sum(): Int = x + m + a + s
