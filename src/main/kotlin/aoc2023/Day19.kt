@@ -28,49 +28,24 @@ class Day19 {
     private fun dfs(
         workflows: Map<String, Workflow>,
         currentWorkflow: String,
-        accepted: MutableMap<Char, IntRange> = mutableMapOf(
-            'x' to 1..4000,
-            'm' to 1..4000,
-            'a' to 1..4000,
-            's' to 1..4000,
-        ),
+        accepted: XmasRange = XmasRange(1..4000, 1..4000, 1..4000, 1..4000),
     ): Long {
         var combinations = 0L
-        val currAccepted = accepted.toMutableMap()
+        var currAccepted = accepted
 
         for (rule in workflows[currentWorkflow]!!.compactRules()) {
-            if (accepted.values.any { it.last == 0 }) return combinations
+            if (currAccepted.isEmptyCombinations()) return combinations
 
-            if (rule.result != "R") {
-                currAccepted.toMutableMap().let { newAccepted ->
-                    newAccepted[rule.param] =
-                        calculateNewRange(newAccepted, rule)
-                    combinations += if (rule.result == "A") {
-                        newAccepted.values.map { it.last - it.first + 1 }
-                            .fold(1L) { acc, num -> acc * num }
-                    } else {
-                        dfs(workflows, rule.result, newAccepted)
-                    }
-                }
+            val newAccepted = currAccepted.updateRange(rule.param, rule.toRange())
+            if (rule.result == "A") {
+                combinations += newAccepted.calculateCombinations()
+            } else if (rule.result != "R") {
+                combinations += dfs(workflows, rule.result, newAccepted)
             }
-            currAccepted[rule.param] = calculateNewRange(currAccepted, rule.inverse())
+
+            currAccepted = currAccepted.updateRange(rule.param, rule.inverse().toRange())
         }
         return combinations
-    }
-
-    private fun calculateNewRange(
-        accepted: Map<Char, IntRange>,
-        rule: Rule,
-    ): IntRange = when (val paramOpPair = "${rule.param}${rule.op}") {
-        "x<" -> accepted['x']!!.rangeIntersect(IntRange(1, rule.value - 1))
-        "x>" -> accepted['x']!!.rangeIntersect(IntRange(rule.value + 1, 4000))
-        "m<" -> accepted['m']!!.rangeIntersect(IntRange(1, rule.value - 1))
-        "m>" -> accepted['m']!!.rangeIntersect(IntRange(rule.value + 1, 4000))
-        "a<" -> accepted['a']!!.rangeIntersect(IntRange(1, rule.value - 1))
-        "a>" -> accepted['a']!!.rangeIntersect(IntRange(rule.value + 1, 4000))
-        "s<" -> accepted['s']!!.rangeIntersect(IntRange(1, rule.value - 1))
-        "s>" -> accepted['s']!!.rangeIntersect(IntRange(rule.value + 1, 4000))
-        else -> throw IllegalArgumentException("Unknown operation: $paramOpPair")
     }
 
     private fun parseInput(input: String): Pair<Map<String, Workflow>, List<XmasPart>> {
@@ -102,13 +77,6 @@ class Day19 {
             workflows[name] = Workflow(name, rules)
         }
         return workflows to parts
-    }
-
-    private fun IntRange.rangeIntersect(other: IntRange): IntRange {
-        if (this.first > other.last || this.last < other.first) {
-            return IntRange(1, 0)
-        }
-        return IntRange(max(this.first, other.first), min(this.last, other.last))
     }
 
     data class Workflow(val name: String, private val rules: List<Rule>) {
@@ -153,11 +121,36 @@ class Day19 {
     }
 
     data class Rule(val param: Char, val op: Char, val value: Int, val result: String) {
+        fun toRange(): IntRange = if (op == '>') IntRange(value + 1, 4000) else IntRange(1, value - 1)
+
         fun inverse(): Rule {
             val invertedOp = if (op == '>') '<' else '>'
             val invertedValue = if (op == '>') value + 1 else value - 1
             return Rule(param, invertedOp, invertedValue, result)
         }
+    }
+
+    data class XmasRange(val x: IntRange, val m: IntRange, val a: IntRange, val s: IntRange) {
+        fun updateRange(ch: Char, range: IntRange): XmasRange = when (ch) {
+            'x' -> copy(x = x.rangeIntersect(range))
+            'm' -> copy(m = m.rangeIntersect(range))
+            'a' -> copy(a = a.rangeIntersect(range))
+            's' -> copy(s = s.rangeIntersect(range))
+            else -> throw IllegalArgumentException("Unknown category $ch")
+        }
+
+        fun isEmptyCombinations(): Boolean = listOf(x, m, a, s).any { it.last == 0 }
+
+        fun calculateCombinations(): Long =
+            listOf(x, m, a, s).map { it.last - it.first + 1 }.fold(1L) { acc, size -> acc * size }
+
+        private fun IntRange.rangeIntersect(other: IntRange): IntRange {
+            if (this.first > other.last || this.last < other.first) {
+                return IntRange(1, 0)
+            }
+            return IntRange(max(this.first, other.first), min(this.last, other.last))
+        }
+
     }
 
     data class XmasPart(val x: Int, val m: Int, val a: Int, val s: Int) {
