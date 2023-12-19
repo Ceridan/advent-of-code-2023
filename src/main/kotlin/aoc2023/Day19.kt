@@ -38,58 +38,38 @@ class Day19 {
         var combinations = 0L
         val currAccepted = accepted.toMutableMap()
 
-        for (condition in workflows[currentWorkflow]!!.compactedConditions) {
+        for (rule in workflows[currentWorkflow]!!.compactRules()) {
             if (accepted.values.any { it.last == 0 }) return combinations
 
-            if (condition is TerminalCondition) {
-                if (condition.result == "A") {
-                    return combinations + currAccepted.values.map { it.last - it.first + 1 }
-                        .fold(1L) { acc, num -> acc * num }
-                }
-                if (condition.result == "R") {
-                    return combinations
-                }
-                return combinations + dfs(workflows, condition.result, currAccepted)
-            }
-
-            val workflowCondition = condition as WorkflowCondition
-            if (workflowCondition.result != "R") {
+            if (rule.result != "R") {
                 currAccepted.toMutableMap().let { newAccepted ->
-                    newAccepted[workflowCondition.param] =
-                        calculateNewRange(newAccepted, workflowCondition)
-                    combinations += if (workflowCondition.result == "A") {
+                    newAccepted[rule.param] =
+                        calculateNewRange(newAccepted, rule)
+                    combinations += if (rule.result == "A") {
                         newAccepted.values.map { it.last - it.first + 1 }
                             .fold(1L) { acc, num -> acc * num }
                     } else {
-                        dfs(workflows, workflowCondition.result, newAccepted)
+                        dfs(workflows, rule.result, newAccepted)
                     }
                 }
             }
-
-            val reverseWorkflowCondition = WorkflowCondition(
-                workflowCondition.param,
-                op = if (workflowCondition.op == '>') '<' else '>',
-                value = if (workflowCondition.op == '>') workflowCondition.value + 1 else workflowCondition.value - 1,
-                result = workflowCondition.result
-            )
-            currAccepted[workflowCondition.param] =
-                calculateNewRange(currAccepted, reverseWorkflowCondition)
+            currAccepted[rule.param] = calculateNewRange(currAccepted, rule.inverse())
         }
         return combinations
     }
 
     private fun calculateNewRange(
         accepted: Map<Char, IntRange>,
-        condition: WorkflowCondition,
-    ): IntRange = when (val paramOpPair = "${condition.param}${condition.op}") {
-        "x<" -> accepted['x']!!.rangeIntersect(IntRange(1, condition.value - 1))
-        "x>" -> accepted['x']!!.rangeIntersect(IntRange(condition.value + 1, 4000))
-        "m<" -> accepted['m']!!.rangeIntersect(IntRange(1, condition.value - 1))
-        "m>" -> accepted['m']!!.rangeIntersect(IntRange(condition.value + 1, 4000))
-        "a<" -> accepted['a']!!.rangeIntersect(IntRange(1, condition.value - 1))
-        "a>" -> accepted['a']!!.rangeIntersect(IntRange(condition.value + 1, 4000))
-        "s<" -> accepted['s']!!.rangeIntersect(IntRange(1, condition.value - 1))
-        "s>" -> accepted['s']!!.rangeIntersect(IntRange(condition.value + 1, 4000))
+        rule: Rule,
+    ): IntRange = when (val paramOpPair = "${rule.param}${rule.op}") {
+        "x<" -> accepted['x']!!.rangeIntersect(IntRange(1, rule.value - 1))
+        "x>" -> accepted['x']!!.rangeIntersect(IntRange(rule.value + 1, 4000))
+        "m<" -> accepted['m']!!.rangeIntersect(IntRange(1, rule.value - 1))
+        "m>" -> accepted['m']!!.rangeIntersect(IntRange(rule.value + 1, 4000))
+        "a<" -> accepted['a']!!.rangeIntersect(IntRange(1, rule.value - 1))
+        "a>" -> accepted['a']!!.rangeIntersect(IntRange(rule.value + 1, 4000))
+        "s<" -> accepted['s']!!.rangeIntersect(IntRange(1, rule.value - 1))
+        "s>" -> accepted['s']!!.rangeIntersect(IntRange(rule.value + 1, 4000))
         else -> throw IllegalArgumentException("Unknown operation: $paramOpPair")
     }
 
@@ -106,20 +86,20 @@ class Day19 {
                 parts.add(XmasPart(x = x.toInt(), m = m.toInt(), a = a.toInt(), s = s.toInt()))
                 continue
             }
-            val (name, rawConditions) = workflowRegex.find(line)!!.destructured
-            val conditions = rawConditions.split(',').map {
-                val condParts = it.split(':')
-                if (condParts.size == 1) {
-                    TerminalCondition(condParts[0])
+            val (name, rawRules) = workflowRegex.find(line)!!.destructured
+            val rules = rawRules.split(',').map {
+                val condRules = it.split(':')
+                if (condRules.size == 1) {
+                    Rule('x', '>', 0, condRules[0])
                 } else {
-                    val param = condParts[0].take(1)[0]
-                    val op = condParts[0].drop(1).take(1)[0]
-                    val value = condParts[0].drop(2).toInt()
-                    val result = condParts[1]
-                    WorkflowCondition(param, op, value, result)
+                    val param = condRules[0].take(1)[0]
+                    val op = condRules[0].drop(1).take(1)[0]
+                    val value = condRules[0].drop(2).toInt()
+                    val result = condRules[1]
+                    Rule(param, op, value, result)
                 }
             }
-            workflows[name] = Workflow(name, conditions)
+            workflows[name] = Workflow(name, rules)
         }
         return workflows to parts
     }
@@ -131,17 +111,15 @@ class Day19 {
         return IntRange(max(this.first, other.first), min(this.last, other.last))
     }
 
-    data class Workflow(val name: String, private val conditions: List<Condition>) {
-        val compactedConditions = mutableListOf<Condition>()
-        private val fnConditions = mutableListOf<(XmasPart) -> String>()
+    data class Workflow(val name: String, private val rules: List<Rule>) {
+        private val fnRules = mutableListOf<(XmasPart) -> String>()
 
         init {
-            compactedConditions.addAll(compactConditions(conditions))
-            fnConditions.addAll(compactedConditions.map { parseRawCondition(it) })
+            fnRules.addAll(rules.map { convertToFn(it) })
         }
 
         fun checkPart(part: XmasPart): String {
-            for (fnCond in fnConditions) {
+            for (fnCond in fnRules) {
                 val result = fnCond(part)
                 if (result != "C") return result
             }
@@ -149,48 +127,38 @@ class Day19 {
             throw IllegalStateException("No conditions are applicable. Workflow: $name, XmasPart: $part")
         }
 
-        private fun compactConditions(conditions: List<Condition>): List<Condition> {
-            val terminalCondition = conditions.first { it is TerminalCondition }
+        fun compactRules(): List<Rule> {
+            val terminalCondition = rules.last()
             val compactedConditions =
-                conditions.asReversed().dropWhile { it.result == terminalCondition.result }
+                rules.asReversed().dropWhile { it.result == terminalCondition.result }
                     .toMutableList()
             compactedConditions.reverse()
             compactedConditions.add(terminalCondition)
             return compactedConditions
         }
 
-        private fun parseRawCondition(condition: Condition): (XmasPart) -> String {
-            if (condition is TerminalCondition) {
-                return { _: XmasPart -> condition.result }
-            }
-
-            val workflowCondition = condition as WorkflowCondition
-
-            return when (val paramOpPair = "${workflowCondition.param}${workflowCondition.op}") {
-                "x<" -> { xmas: XmasPart -> if (xmas.x < workflowCondition.value) workflowCondition.result else "C" }
-                "x>" -> { xmas: XmasPart -> if (xmas.x > workflowCondition.value) workflowCondition.result else "C" }
-                "m<" -> { xmas: XmasPart -> if (xmas.m < workflowCondition.value) workflowCondition.result else "C" }
-                "m>" -> { xmas: XmasPart -> if (xmas.m > workflowCondition.value) workflowCondition.result else "C" }
-                "a<" -> { xmas: XmasPart -> if (xmas.a < workflowCondition.value) workflowCondition.result else "C" }
-                "a>" -> { xmas: XmasPart -> if (xmas.a > workflowCondition.value) workflowCondition.result else "C" }
-                "s<" -> { xmas: XmasPart -> if (xmas.s < workflowCondition.value) workflowCondition.result else "C" }
-                "s>" -> { xmas: XmasPart -> if (xmas.s > workflowCondition.value) workflowCondition.result else "C" }
+        private fun convertToFn(rule: Rule): (XmasPart) -> String {
+            return when (val paramOpPair = "${rule.param}${rule.op}") {
+                "x<" -> { xmas: XmasPart -> if (xmas.x < rule.value) rule.result else "C" }
+                "x>" -> { xmas: XmasPart -> if (xmas.x > rule.value) rule.result else "C" }
+                "m<" -> { xmas: XmasPart -> if (xmas.m < rule.value) rule.result else "C" }
+                "m>" -> { xmas: XmasPart -> if (xmas.m > rule.value) rule.result else "C" }
+                "a<" -> { xmas: XmasPart -> if (xmas.a < rule.value) rule.result else "C" }
+                "a>" -> { xmas: XmasPart -> if (xmas.a > rule.value) rule.result else "C" }
+                "s<" -> { xmas: XmasPart -> if (xmas.s < rule.value) rule.result else "C" }
+                "s>" -> { xmas: XmasPart -> if (xmas.s > rule.value) rule.result else "C" }
                 else -> throw IllegalArgumentException("Unknown operation: $paramOpPair")
             }
         }
     }
 
-    interface Condition {
-        val result: String
+    data class Rule(val param: Char, val op: Char, val value: Int, val result: String) {
+        fun inverse(): Rule {
+            val invertedOp = if (op == '>') '<' else '>'
+            val invertedValue = if (op == '>') value + 1 else value - 1
+            return Rule(param, invertedOp, invertedValue, result)
+        }
     }
-
-    data class TerminalCondition(override val result: String) : Condition
-    data class WorkflowCondition(
-        val param: Char,
-        val op: Char,
-        val value: Int,
-        override val result: String,
-    ) : Condition
 
     data class XmasPart(val x: Int, val m: Int, val a: Int, val s: Int) {
         fun sum(): Int = x + m + a + s
