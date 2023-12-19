@@ -29,14 +29,14 @@ class Day19 {
         workflows: Map<String, Workflow>,
         currentWorkflow: String,
         accepted: MutableMap<Char, IntRange> = mutableMapOf(
-            'x' to IntRange(1, 4000),
-            'm' to IntRange(1, 4000),
-            'a' to IntRange(1, 4000),
-            's' to IntRange(1, 4000)
+            'x' to 1..4000,
+            'm' to 1..4000,
+            'a' to 1..4000,
+            's' to 1..4000,
         ),
     ): Long {
         var combinations = 0L
-        var currAccepted = accepted.toMutableMap()
+        val currAccepted = accepted.toMutableMap()
 
         for (condition in workflows[currentWorkflow]!!.compactedConditions) {
             if (accepted.values.any { it.last == 0 }) return combinations
@@ -54,11 +54,9 @@ class Day19 {
 
             val workflowCondition = condition as WorkflowCondition
             if (workflowCondition.result != "R") {
-                val paramOpPair = "${workflowCondition.param}${workflowCondition.op}"
                 currAccepted.toMutableMap().let { newAccepted ->
                     newAccepted[workflowCondition.param] =
-                        calculateNewRange(newAccepted, paramOpPair, workflowCondition.value)
-
+                        calculateNewRange(newAccepted, workflowCondition)
                     combinations += if (workflowCondition.result == "A") {
                         newAccepted.values.map { it.last - it.first + 1 }
                             .fold(1L) { acc, num -> acc * num }
@@ -68,35 +66,31 @@ class Day19 {
                 }
             }
 
-            if (workflowCondition.op == '>') {
-                val revParamOpPair = "${workflowCondition.param}<"
-                currAccepted[workflowCondition.param] =
-                    calculateNewRange(currAccepted, revParamOpPair, workflowCondition.value + 1)
-            } else {
-                val revParamOpPair = "${workflowCondition.param}>"
-                currAccepted[workflowCondition.param] =
-                    calculateNewRange(currAccepted, revParamOpPair, workflowCondition.value - 1)
-            }
+            val reverseWorkflowCondition = WorkflowCondition(
+                workflowCondition.param,
+                op = if (workflowCondition.op == '>') '<' else '>',
+                value = if (workflowCondition.op == '>') workflowCondition.value + 1 else workflowCondition.value - 1,
+                result = workflowCondition.result
+            )
+            currAccepted[workflowCondition.param] =
+                calculateNewRange(currAccepted, reverseWorkflowCondition)
         }
         return combinations
     }
 
     private fun calculateNewRange(
         accepted: Map<Char, IntRange>,
-        paramOpPair: String,
-        value: Int,
-    ): IntRange {
-        return when (paramOpPair) {
-            "x<" -> accepted['x']!!.rangeIntersect(IntRange(1, value - 1))
-            "x>" -> accepted['x']!!.rangeIntersect(IntRange(value + 1, 4000))
-            "m<" -> accepted['m']!!.rangeIntersect(IntRange(1, value - 1))
-            "m>" -> accepted['m']!!.rangeIntersect(IntRange(value + 1, 4000))
-            "a<" -> accepted['a']!!.rangeIntersect(IntRange(1, value - 1))
-            "a>" -> accepted['a']!!.rangeIntersect(IntRange(value + 1, 4000))
-            "s<" -> accepted['s']!!.rangeIntersect(IntRange(1, value - 1))
-            "s>" -> accepted['s']!!.rangeIntersect(IntRange(value + 1, 4000))
-            else -> throw IllegalArgumentException("Unknown operation: $paramOpPair")
-        }
+        condition: WorkflowCondition,
+    ): IntRange = when (val paramOpPair = "${condition.param}${condition.op}") {
+        "x<" -> accepted['x']!!.rangeIntersect(IntRange(1, condition.value - 1))
+        "x>" -> accepted['x']!!.rangeIntersect(IntRange(condition.value + 1, 4000))
+        "m<" -> accepted['m']!!.rangeIntersect(IntRange(1, condition.value - 1))
+        "m>" -> accepted['m']!!.rangeIntersect(IntRange(condition.value + 1, 4000))
+        "a<" -> accepted['a']!!.rangeIntersect(IntRange(1, condition.value - 1))
+        "a>" -> accepted['a']!!.rangeIntersect(IntRange(condition.value + 1, 4000))
+        "s<" -> accepted['s']!!.rangeIntersect(IntRange(1, condition.value - 1))
+        "s>" -> accepted['s']!!.rangeIntersect(IntRange(condition.value + 1, 4000))
+        else -> throw IllegalArgumentException("Unknown operation: $paramOpPair")
     }
 
     private fun parseInput(input: String): Pair<Map<String, Workflow>, List<XmasPart>> {
