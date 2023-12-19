@@ -1,6 +1,8 @@
 package aoc2023
 
 import kotlin.IllegalStateException
+import kotlin.math.min
+import kotlin.math.max
 
 class Day19 {
     fun part1(input: String): Int {
@@ -19,7 +21,82 @@ class Day19 {
     }
 
     fun part2(input: String): Long {
-        return 0L
+        val (workflows, _) = parseInput(input)
+        return dfs(workflows, "in")
+    }
+
+    private fun dfs(
+        workflows: Map<String, Workflow>,
+        currentWorkflow: String,
+        accepted: MutableMap<Char, IntRange> = mutableMapOf(
+            'x' to IntRange(1, 4000),
+            'm' to IntRange(1, 4000),
+            'a' to IntRange(1, 4000),
+            's' to IntRange(1, 4000)
+        ),
+    ): Long {
+        var combinations = 0L
+        var currAccepted = accepted.toMutableMap()
+
+        for (condition in workflows[currentWorkflow]!!.compactedConditions) {
+            if (accepted.values.any { it.last == 0 }) return combinations
+
+            if (condition is TerminalCondition) {
+                if (condition.result == "A") {
+                    return combinations + currAccepted.values.map { it.last - it.first + 1 }
+                        .fold(1L) { acc, num -> acc * num }
+                }
+                if (condition.result == "R") {
+                    return combinations
+                }
+                return combinations + dfs(workflows, condition.result, currAccepted)
+            }
+
+            val workflowCondition = condition as WorkflowCondition
+            if (workflowCondition.result != "R") {
+                val paramOpPair = "${workflowCondition.param}${workflowCondition.op}"
+                currAccepted.toMutableMap().let { newAccepted ->
+                    newAccepted[workflowCondition.param] =
+                        calculateNewRange(newAccepted, paramOpPair, workflowCondition.value)
+
+                    combinations += if (workflowCondition.result == "A") {
+                        newAccepted.values.map { it.last - it.first + 1 }
+                            .fold(1L) { acc, num -> acc * num }
+                    } else {
+                        dfs(workflows, workflowCondition.result, newAccepted)
+                    }
+                }
+            }
+
+            if (workflowCondition.op == '>') {
+                val revParamOpPair = "${workflowCondition.param}<"
+                currAccepted[workflowCondition.param] =
+                    calculateNewRange(currAccepted, revParamOpPair, workflowCondition.value + 1)
+            } else {
+                val revParamOpPair = "${workflowCondition.param}>"
+                currAccepted[workflowCondition.param] =
+                    calculateNewRange(currAccepted, revParamOpPair, workflowCondition.value - 1)
+            }
+        }
+        return combinations
+    }
+
+    private fun calculateNewRange(
+        accepted: Map<Char, IntRange>,
+        paramOpPair: String,
+        value: Int,
+    ): IntRange {
+        return when (paramOpPair) {
+            "x<" -> accepted['x']!!.rangeIntersect(IntRange(1, value - 1))
+            "x>" -> accepted['x']!!.rangeIntersect(IntRange(value + 1, 4000))
+            "m<" -> accepted['m']!!.rangeIntersect(IntRange(1, value - 1))
+            "m>" -> accepted['m']!!.rangeIntersect(IntRange(value + 1, 4000))
+            "a<" -> accepted['a']!!.rangeIntersect(IntRange(1, value - 1))
+            "a>" -> accepted['a']!!.rangeIntersect(IntRange(value + 1, 4000))
+            "s<" -> accepted['s']!!.rangeIntersect(IntRange(1, value - 1))
+            "s>" -> accepted['s']!!.rangeIntersect(IntRange(value + 1, 4000))
+            else -> throw IllegalArgumentException("Unknown operation: $paramOpPair")
+        }
     }
 
     private fun parseInput(input: String): Pair<Map<String, Workflow>, List<XmasPart>> {
@@ -53,9 +130,16 @@ class Day19 {
         return workflows to parts
     }
 
+    private fun IntRange.rangeIntersect(other: IntRange): IntRange {
+        if (this.first > other.last || this.last < other.first) {
+            return IntRange(1, 0)
+        }
+        return IntRange(max(this.first, other.first), min(this.last, other.last))
+    }
+
     data class Workflow(val name: String, private val conditions: List<Condition>) {
+        val compactedConditions = mutableListOf<Condition>()
         private val fnConditions = mutableListOf<(XmasPart) -> String>()
-        private val compactedConditions = mutableListOf<Condition>()
 
         init {
             compactedConditions.addAll(compactConditions(conditions))
@@ -73,7 +157,9 @@ class Day19 {
 
         private fun compactConditions(conditions: List<Condition>): List<Condition> {
             val terminalCondition = conditions.first { it is TerminalCondition }
-            val compactedConditions = conditions.asReversed().dropWhile { it.result == terminalCondition.result }.toMutableList()
+            val compactedConditions =
+                conditions.asReversed().dropWhile { it.result == terminalCondition.result }
+                    .toMutableList()
             compactedConditions.reverse()
             compactedConditions.add(terminalCondition)
             return compactedConditions
