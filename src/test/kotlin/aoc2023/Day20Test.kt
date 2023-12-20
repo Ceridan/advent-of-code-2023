@@ -37,9 +37,4 @@ class Day20Test {
 
         assertEquals(11687500L, day20.part1(input))
     }
-
-    @Test
-    fun `part2 example`() {
-        assertEquals(0, day20.part2(""))
-    }
 }

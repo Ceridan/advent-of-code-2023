@@ -16,6 +16,10 @@ fun Point.normalize(): Point {
     return Point(newY, newX)
 }
 
+fun gcd(a: Long, b: Long): Long = if (a == 0L) b else gcd(b % a, a)
+
+fun lcm(a: Long, b: Long): Long = a * b / gcd(a, b)
+
 fun readInputAsString(filename: String): String = getFile(filename).readText()
 
 fun readInputAsStringList(filename: String): List<String> = getFile(filename).readLines()

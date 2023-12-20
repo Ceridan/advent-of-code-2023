@@ -18,7 +18,31 @@ class Day20 {
     }
 
     fun part2(input: String): Long {
-        return 0
+        val modules = parseInput(input)
+        val rxDepsL1 = modules.values.filter { "rx" in it.modules }.map { it.name }
+        val rxDepsL2 =
+            modules.values.filter { rxDepsL1.toSet().intersect(it.modules.toSet()).isNotEmpty() }.map { it.name }
+        val l2Cycles = rxDepsL2.associateWith { 0L }.toMutableMap()
+        var counter = 1L
+        while (true) {
+            val queue = ArrayDeque(listOf("button"))
+            while (queue.isNotEmpty()) {
+                val module = modules[queue.removeFirst()]!!
+                val (pulse, outputs) = module.processOutput()
+                for (output in outputs) {
+                    if (output == "rx" && pulse == 0) return counter
+                    if (output in l2Cycles && pulse == 0) {
+                        l2Cycles[output] = counter
+                        if (l2Cycles.values.all { it > 0 }) {
+                            return l2Cycles.values.reduce { acc, value -> lcm(acc, value) }
+                        }
+                    }
+                    modules[output]!!.processInput(module.name, pulse)
+                    queue.add(output)
+                }
+            }
+            counter++
+        }
     }
 
     private fun parseInput(input: String): Map<String, MachineModule> {
@@ -59,7 +83,7 @@ class Day20 {
         return modules
     }
 
-    abstract class MachineModule(open val name: String, protected open val modules: List<String>) {
+    abstract class MachineModule(open val name: String, open val modules: List<String>) {
         var lowCounter = 0L
         var highCounter = 0L
         abstract fun processInput(moduleName: String, pulse: Int)
@@ -125,7 +149,11 @@ class Day20 {
         override fun printState(): String = "$name -> { $isOn } -> $modules"
     }
 
-    data class ConjunctionModule(override val name: String, override val modules: List<String>, private val inputs: List<String>) :
+    data class ConjunctionModule(
+        override val name: String,
+        override val modules: List<String>,
+        private val inputs: List<String>
+    ) :
         MachineModule(name, modules) {
         private val inputMap = inputs.associateWith { 0 }.toMutableMap()
 

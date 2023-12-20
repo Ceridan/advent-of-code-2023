@@ -40,10 +40,6 @@ class Day08 {
         return aNodeMap.values.flatten().toSet().reduce { acc, num -> lcm(acc, num) }
     }
 
-    private fun gcd(a: Long, b: Long): Long = if (a == 0L) b else gcd(b % a, a)
-
-    private fun lcm(a: Long, b: Long): Long = a * b / gcd(a, b)
-
     private fun parseInput(input: List<String>): Pair<CharArray, Map<String, Pair<String, String>>> {
         val directions = input[0].toCharArray()
         val network = mutableMapOf<String, Pair<String, String>>()
