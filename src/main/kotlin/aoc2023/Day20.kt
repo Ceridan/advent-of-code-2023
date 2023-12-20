@@ -3,45 +3,54 @@ package aoc2023
 class Day20 {
     fun part1(input: String): Long {
         val modules = parseInput(input)
-        for (i in 1..1000) {
+        var low = 0L
+        var high = 0L
+        repeat(1000) {
             val queue = ArrayDeque(listOf("button"))
             while (queue.isNotEmpty()) {
                 val module = modules[queue.removeFirst()]!!
-                val (pulse, outputs) = module.processOutput()
-                for (output in outputs) {
-                    modules[output]!!.processInput(module.name, pulse)
-                    queue.add(output)
+                module.processOutput()?.let { pulse ->
+                    for (output in module.outputs) {
+                        if (pulse == 0) {
+                            low++
+                        } else {
+                            high++
+                        }
+
+                        modules[output]!!.processInput(module.name, pulse)
+                        queue.add(output)
+                    }
                 }
             }
         }
-        return modules.values.sumOf { it.lowCounter } * modules.values.sumOf { it.highCounter }
+        return low * high
     }
 
     fun part2(input: String): Long {
         val modules = parseInput(input)
-        val rxDepsL1 = modules.values.filter { "rx" in it.modules }.map { it.name }
-        val rxDepsL2 =
-            modules.values.filter { rxDepsL1.toSet().intersect(it.modules.toSet()).isNotEmpty() }.map { it.name }
-        val l2Cycles = rxDepsL2.associateWith { 0L }.toMutableMap()
-        var counter = 1L
+        val rxInputsL1 = modules["rx"]!!.inputs
+        val rxInputsL2 = rxInputsL1.map { modules[it]!!.inputs }.flatten()
+        val rxInputsL2Cycles = rxInputsL2.associateWith { 0L }.toMutableMap()
+        var pressCounter = 1L
         while (true) {
             val queue = ArrayDeque(listOf("button"))
             while (queue.isNotEmpty()) {
                 val module = modules[queue.removeFirst()]!!
-                val (pulse, outputs) = module.processOutput()
-                for (output in outputs) {
-                    if (output == "rx" && pulse == 0) return counter
-                    if (output in l2Cycles && pulse == 0) {
-                        l2Cycles[output] = counter
-                        if (l2Cycles.values.all { it > 0 }) {
-                            return l2Cycles.values.reduce { acc, value -> lcm(acc, value) }
+                module.processOutput()?.let { pulse ->
+                    for (output in module.outputs) {
+                        if (output == "rx" && pulse == 0) return pressCounter
+                        if (output in rxInputsL2Cycles && pulse == 0) {
+                            rxInputsL2Cycles[output] = pressCounter
+                            if (rxInputsL2Cycles.values.all { it > 0L }) {
+                                return rxInputsL2Cycles.values.reduce { acc, value -> lcm(acc, value) }
+                            }
                         }
+                        modules[output]!!.processInput(module.name, pulse)
+                        queue.add(output)
                     }
-                    modules[output]!!.processInput(module.name, pulse)
-                    queue.add(output)
                 }
             }
-            counter++
+            pressCounter++
         }
     }
 
@@ -62,125 +71,79 @@ class Day20 {
             }
         }
 
-        val modules = mutableMapOf<String, MachineModule>("button" to ButtonModule("button", listOf("broadcaster")))
+        val modules = mutableMapOf<String, MachineModule>("button" to ButtonModule())
         for (line in lines) {
             val module = line.takeWhile { it != ' ' }
             val moduleType = module[0]
             val moduleName = if (module == "broadcast") "broadcast" else module.drop(1)
             when (moduleType) {
-                '%' -> modules[moduleName] = FlipFlopModule(moduleName, outputs[moduleName]!!)
-                '&' -> modules[moduleName] = ConjunctionModule(moduleName, outputs[moduleName]!!, inputs[moduleName]!!)
-                else -> modules["broadcaster"] = BroadcastModule("broadcaster", outputs[moduleName]!!)
+                '%' -> modules[moduleName] =
+                    FlipFlopModule(moduleName, inputs = inputs[moduleName]!!, outputs = outputs[moduleName]!!)
+
+                '&' -> modules[moduleName] =
+                    ConjunctionModule(moduleName, inputs = inputs[moduleName]!!, outputs = outputs[moduleName]!!)
+
+                else -> modules["broadcaster"] = BroadcastModule(outputs[moduleName]!!)
             }
         }
 
-        for (moduleName in inputs.keys) {
-            if (moduleName !in modules) {
-                modules[moduleName] = OutputModule(moduleName, listOf())
-            }
+        inputs.filter { it.key !in modules }.forEach { (name, inputs) ->
+            modules[name] = OutputModule(name, inputs = inputs)
         }
 
         return modules
     }
 
-    abstract class MachineModule(open val name: String, open val modules: List<String>) {
-        var lowCounter = 0L
-        var highCounter = 0L
-        abstract fun processInput(moduleName: String, pulse: Int)
-        abstract fun processOutput(): Pair<Int, List<String>>
-        abstract fun printState(): String
+    abstract class MachineModule(
+        val name: String,
+        val inputs: List<String> = listOf(),
+        val outputs: List<String> = listOf()
+    ) {
+        open fun processInput(moduleName: String, pulse: Int) {}
+        open fun processOutput(): Int? = null
     }
 
-    data class ButtonModule(override val name: String, override val modules: List<String>) :
-        MachineModule(name, modules) {
-        override fun processInput(moduleName: String, pulse: Int) {}
-        override fun processOutput(): Pair<Int, List<String>> {
-            lowCounter += modules.size
-            return 0 to modules
-        }
-
-        override fun printState(): String = "$name -> $modules"
+    class ButtonModule : MachineModule("button", outputs = listOf("broadcaster")) {
+        override fun processOutput(): Int = 0
     }
 
-    data class BroadcastModule(override val name: String, override val modules: List<String>) :
-        MachineModule(name, modules) {
+    class BroadcastModule(outputs: List<String>) :
+        MachineModule("broadcaster", inputs = listOf("button"), outputs = outputs) {
         private var pulse = 0
-
         override fun processInput(moduleName: String, pulse: Int) {
             this.pulse = pulse
         }
 
-        override fun processOutput(): Pair<Int, List<String>> {
-            if (pulse == 0) {
-                lowCounter += modules.size
-            } else {
-                highCounter += modules.size
-            }
-            return pulse to modules
-        }
-
-        override fun printState(): String = "$name -> $pulse -> $modules"
+        override fun processOutput(): Int = pulse
     }
 
-    data class FlipFlopModule(override val name: String, override val modules: List<String>) :
-        MachineModule(name, modules) {
+    class FlipFlopModule(name: String, inputs: List<String>, outputs: List<String>) :
+        MachineModule(name, inputs = inputs, outputs = outputs) {
         private val pulses = ArrayDeque<Int>()
-        private var isOn = false
+        private var isOn = 0
         override fun processInput(moduleName: String, pulse: Int) {
             pulses.add(pulse)
         }
 
-        override fun processOutput(): Pair<Int, List<String>> {
+        override fun processOutput(): Int? {
             val pulse = pulses.removeFirst()
-            if (pulse == 1) {
-                return pulse to listOf()
-            }
-
-            isOn = !isOn
-            return if (isOn) {
-                highCounter += modules.size
-                1 to modules
-            } else {
-                lowCounter += modules.size
-                0 to modules
-            }
+            if (pulse == 1) return null
+            isOn = (isOn + 1) % 2
+            return isOn
         }
-
-        override fun printState(): String = "$name -> { $isOn } -> $modules"
     }
 
-    data class ConjunctionModule(
-        override val name: String,
-        override val modules: List<String>,
-        private val inputs: List<String>
-    ) :
-        MachineModule(name, modules) {
-        private val inputMap = inputs.associateWith { 0 }.toMutableMap()
-
+    class ConjunctionModule(name: String, inputs: List<String>, outputs: List<String>) :
+        MachineModule(name, inputs = inputs, outputs = outputs) {
+        private val inputSignals = inputs.associateWith { 0 }.toMutableMap()
         override fun processInput(moduleName: String, pulse: Int) {
-            inputMap[moduleName] = pulse
+            inputSignals[moduleName] = pulse
         }
 
-        override fun processOutput(): Pair<Int, List<String>> {
-            return if (inputMap.values.all { it == 1 }) {
-                lowCounter += modules.size
-                0 to modules
-            } else {
-                highCounter += modules.size
-                1 to modules
-            }
-        }
-
-        override fun printState(): String = "$name -> $inputMap"
+        override fun processOutput(): Int = if (inputSignals.values.all { it == 1 }) 0 else 1
     }
 
-    data class OutputModule(override val name: String, override val modules: List<String>) :
-        MachineModule(name, modules) {
-        override fun processInput(moduleName: String, pulse: Int) {}
-        override fun processOutput(): Pair<Int, List<String>> = 0 to listOf()
-
-        override fun printState(): String = "$name -> $modules"
-    }
+    class OutputModule(name: String, inputs: List<String>) : MachineModule(name, inputs = inputs)
 }
 
 fun main() {
