@@ -3,7 +3,7 @@ package aoc2023
 class Day20 {
     fun part1(input: String): Long {
         val modules = parseInput(input)
-        for (i in 1..1) {
+        for (i in 1..1000) {
             val queue = ArrayDeque(listOf("button"))
             while (queue.isNotEmpty()) {
                 val module = modules[queue.removeFirst()]!!
@@ -23,18 +23,39 @@ class Day20 {
 
     private fun parseInput(input: String): Map<String, MachineModule> {
         val lines = input.split('\n').filter { it.isNotEmpty() }
-        val modules: MutableMap<String, MachineModule> =
-            mutableMapOf("button" to ButtonModule("button", listOf("broadcaster")))
+        val inputs = mutableMapOf<String, MutableList<String>>()
+        val outputs = mutableMapOf<String, List<String>>()
         for (line in lines) {
             val (module, outputString) = line.split(" -> ")
-            val moduleName = module.drop(1)
-            val outputs = outputString.split(',').filter { it.isNotEmpty() }.map { it.trim() }
-            when (module[0]) {
-                '%' -> modules[moduleName] = FlipFlopModule(moduleName, outputs)
-                '&' -> modules[moduleName] = ConjunctionModule(moduleName, outputs)
-                else -> modules["broadcaster"] = BroadcastModule("broadcaster", outputs)
+            val moduleName = if (module == "broadcast") "broadcast" else module.drop(1)
+            val outs = outputString.split(',').filter { it.isNotEmpty() }.map { it.trim() }
+            outputs[moduleName] = outs
+            for (out in outs) {
+                if (out !in inputs) {
+                    inputs[out] = mutableListOf()
+                }
+                inputs[out]!!.add(moduleName)
             }
         }
+
+        val modules = mutableMapOf<String, MachineModule>("button" to ButtonModule("button", listOf("broadcaster")))
+        for (line in lines) {
+            val module = line.takeWhile { it != ' ' }
+            val moduleType = module[0]
+            val moduleName = if (module == "broadcast") "broadcast" else module.drop(1)
+            when (moduleType) {
+                '%' -> modules[moduleName] = FlipFlopModule(moduleName, outputs[moduleName]!!)
+                '&' -> modules[moduleName] = ConjunctionModule(moduleName, outputs[moduleName]!!, inputs[moduleName]!!)
+                else -> modules["broadcaster"] = BroadcastModule("broadcaster", outputs[moduleName]!!)
+            }
+        }
+
+        for (moduleName in inputs.keys) {
+            if (moduleName !in modules) {
+                modules[moduleName] = OutputModule(moduleName, listOf())
+            }
+        }
+
         return modules
     }
 
@@ -104,16 +125,16 @@ class Day20 {
         override fun printState(): String = "$name -> { $isOn } -> $modules"
     }
 
-    data class ConjunctionModule(override val name: String, override val modules: List<String>) :
+    data class ConjunctionModule(override val name: String, override val modules: List<String>, private val inputs: List<String>) :
         MachineModule(name, modules) {
-        private val modulesMap = modules.associateBy({ it }, { 0 }).toMutableMap()
+        private val inputMap = inputs.associateWith { 0 }.toMutableMap()
 
         override fun processInput(moduleName: String, pulse: Int) {
-            modulesMap[moduleName] = pulse
+            inputMap[moduleName] = pulse
         }
 
         override fun processOutput(): Pair<Int, List<String>> {
-            return if (modulesMap.values.all { it == 1 }) {
+            return if (inputMap.values.all { it == 1 }) {
                 lowCounter += modules.size
                 0 to modules
             } else {
@@ -122,7 +143,15 @@ class Day20 {
             }
         }
 
-        override fun printState(): String = "$name -> $modulesMap"
+        override fun printState(): String = "$name -> $inputMap"
+    }
+
+    data class OutputModule(override val name: String, override val modules: List<String>) :
+        MachineModule(name, modules) {
+        override fun processInput(moduleName: String, pulse: Int) {}
+        override fun processOutput(): Pair<Int, List<String>> = 0 to listOf()
+
+        override fun printState(): String = "$name -> $modules"
     }
 }
 
