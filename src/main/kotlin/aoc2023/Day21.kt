@@ -27,10 +27,36 @@ class Day21 {
     }
 
     fun part2(input: String, steps: Long): Long {
-        return 0
+        val isEven = steps.isEven()
+        val (start, grid) = parseInput(input)
+        val maxY = grid.keys.maxOf { it.y } + 1
+        val maxX = grid.keys.maxOf { it.x } + 1
+        val visited = mutableSetOf<Point>()
+        val queue = ArrayDeque(listOf(start to 0L))
+        var counter = 0L
+        while (queue.isNotEmpty()) {
+            val (point, step) = queue.removeFirst()
+            val gridPoint = point.y % maxY to point.x % maxX
+            if (grid[gridPoint] == '#') continue
+            if (gridPoint in visited) continue
+            visited.add(gridPoint)
+
+            val isEvenCounter = step.isEven()
+            val isEvenGrid = (point.y / maxY + point.x / maxX).isEven()
+            if ((isEven && isEvenCounter && isEvenGrid) || (isEven && !isEvenCounter && !isEvenGrid) || (!isEven && !isEvenCounter && isEvenGrid) || (!isEven && isEvenCounter && !isEvenGrid)) counter++
+            if (step == steps) continue
+
+            queue.add(Pair(point + (-1 to 0), step + 1L))
+            queue.add(Pair(point + (0 to -1), step + 1L))
+            queue.add(Pair(point + (1 to 0), step + 1L))
+            queue.add(Pair(point + (0 to 1), step + 1L))
+        }
+
+        return counter
     }
 
-    private fun Long.isEven(): Boolean = (this and 1) == 0L
+    private fun Int.isEven(): Boolean = (this and 1) == 0
+    private fun Long.isEven(): Boolean = (this and 1L) == 0L
 
     private fun parseInput(input: String): Pair<Point, Map<Point, Char>> {
         val grid = mutableMapOf<Point, Char>()
