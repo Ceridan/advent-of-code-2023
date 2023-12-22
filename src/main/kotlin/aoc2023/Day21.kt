@@ -16,9 +16,9 @@ class Day21 {
         // https://en.wikipedia.org/wiki/Vandermonde_matrix
         // https://en.wikipedia.org/wiki/Cramer%27s_rule
         // Vandermonde matrix:
-        // [ 1 0 0 ]
-        // [ 1 1 1 ]
-        // [ 1 2 4 ]
+        //     [ 1 0 0 ]
+        // A = [ 1 1 1 ]
+        //     [ 1 2 4 ]
 
         val (b0, b1, b2) = getReachablePoints(
             grid,
