@@ -14,7 +14,16 @@ class Day22Test {
 
     @Test
     fun `part1 example`() {
-        val input = listOf(
+        assertEquals(5, day22.part1(INPUT))
+    }
+
+    @Test
+    fun `part2 example`() {
+        assertEquals(7, day22.part2(INPUT))
+    }
+
+    private companion object {
+        val INPUT = listOf(
             "1,0,1~1,2,1",
             "0,0,2~2,0,2",
             "0,2,3~2,2,3",
@@ -23,12 +32,5 @@ class Day22Test {
             "0,1,6~2,1,6",
             "1,1,8~1,1,9",
         )
-
-        assertEquals(0, day22.part1(input))
-    }
-
-    @Test
-    fun `part2 example`() {
-        assertEquals(0, day22.part2(listOf()))
     }
 }
