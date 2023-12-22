@@ -18,7 +18,20 @@ class Day22Test {
     }
 
     @Test
-    fun `part2 example`() {
+    fun `part2 example - toy`() {
+        val input = listOf(
+            "1,0,1~1,1,1",
+            "1,0,2~1,0,2",
+            "1,1,2~1,1,2",
+            "1,0,3~1,0,3",
+            "1,1,3~1,1,3",
+            "1,0,4~1,1,4",
+        )
+        assertEquals(7, day22.part2(input))
+    }
+
+    @Test
+    fun `part2 example - full`() {
         assertEquals(7, day22.part2(INPUT))
     }
 

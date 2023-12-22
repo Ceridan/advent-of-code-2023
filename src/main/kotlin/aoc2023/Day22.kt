@@ -6,6 +6,60 @@ import kotlin.math.min
 class Day22 {
     fun part1(input: List<String>): Int {
         val bricks = parseInput(input)
+        val landed = fall(bricks)
+        val onlySupporters = getOnlySupporters(landed)
+        return landed.size - onlySupporters.size
+    }
+
+    fun part2(input: List<String>): Long {
+        val bricks = parseInput(input)
+        val landed = fall(bricks)
+        val bricksMap = landed.associateBy { it.id }
+        val supportingMap = landed.map { it.id }.associateWith { mutableSetOf<Int>() }.toMutableMap()
+        for (brick in landed) {
+            for (id in brick.supportedBy) {
+                supportingMap[id]!!.add(brick.id)
+            }
+        }
+//        val supportingMap = landed.map { it.id }.associateWith { mutableSetOf<Int>() }.toMutableMap()
+//        for (brick in landed.sortedByDescending { it.zr.last }) {
+//            for (id in brick.supportedBy) {
+//                supportingMap[id]!!.addAll(supportingMap[brick.id]!!)
+//                supportingMap[id]!!.add(brick.id)
+//            }
+//        }
+
+        val onlySupportersIds = getOnlySupporters(landed).map { it.id }
+        var totalFallenSum = 0L
+        val cache = mutableMapOf<Pair<Int, Set<Int>>, Long>()
+        for (id in onlySupportersIds) {
+            totalFallenSum += dfs(bricksMap, supportingMap, id, setOf(id), cache)
+        }
+        return totalFallenSum
+    }
+
+    // 124515 - too high
+
+    private fun dfs(bricksMap: Map<Int, Brick>, supportingMap: Map<Int, Set<Int>>, currentId: Int, fallen: Set<Int> = setOf(), cache: MutableMap<Pair<Int, Set<Int>>, Long> = mutableMapOf()): Long {
+        if (supportingMap[currentId]!!.isEmpty()) return 0L
+        if ((currentId to fallen) in cache) return cache[currentId to fallen]!!
+        if (bricksMap[currentId]!!.supportedBy.subtract(fallen).isNotEmpty()) return 0L
+
+        var fallenSum = 0L
+        val newFallen = fallen + supportingMap[currentId]!!
+        for (id in supportingMap[currentId]!!) {
+            fallenSum += 1L + cache.getOrPut(id to newFallen) { dfs(bricksMap, supportingMap, id, newFallen, cache) }
+        }
+
+        return fallenSum
+    }
+
+    private fun getOnlySupporters(landed: List<Brick>): List<Brick> {
+        val onlySupporterIds = landed.filter { it.supportedBy.size == 1 }.flatMap { it.supportedBy }.toSet()
+        return landed.filter { it.id in onlySupporterIds }
+    }
+
+    private fun fall(bricks: List<Brick>): List<Brick> {
         val grounds = bricks.filter { it.zr.first == 1 }
         val groundMap = grounds.map { it.zr.last }.toSet()
             .associateWith { maxZ -> grounds.filter { it.zr.last == maxZ }.toMutableList() }.toMutableMap()
@@ -31,13 +85,7 @@ class Day22 {
             groundMap[newGroundBrick.zr.last]!!.add(newGroundBrick)
         }
 
-        val landed = groundMap.values.flatten()
-        val supportedByOne = landed.filter { it.supportedBy.size == 1 }.flatMap { it.supportedBy }.toSet().size
-        return landed.size - supportedByOne
-    }
-
-    fun part2(input: List<String>): Int {
-        return 0
+        return groundMap.values.flatten()
     }
 
     private fun parseInput(input: List<String>): List<Brick> = input.withIndex().map { (i, line) ->
