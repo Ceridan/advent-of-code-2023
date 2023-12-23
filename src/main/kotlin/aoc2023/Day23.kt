@@ -1,7 +1,5 @@
 package aoc2023
 
-import kotlin.math.max
-
 class Day23 {
     fun part1(input: String): Int {
         val (grid, start, end) = parseInput(input)
@@ -9,7 +7,17 @@ class Day23 {
     }
 
     fun part2(input: String): Int {
-        return 0
+        val (grid, start, end) = parseInput(input)
+        val gridWithoutSlopes = grid.mapValues { (_, ch) ->
+            when (ch) {
+                '^' -> '.'
+                '>' -> '.'
+                'v' -> '.'
+                '<' -> '.'
+                else -> ch
+            }
+        }
+        return dfs(gridWithoutSlopes, start, end, 0) - 1
     }
 
     private fun dfs(
