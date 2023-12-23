@@ -33,7 +33,7 @@ class Day22 {
         val supportedBy = bricks.map { it.id }.associateWith { mutableSetOf<Int>() }
         var moved = 0L
         for (fallBrick in bricks.sortedBy { it.zr.first }) {
-            var landedZ = 0
+            var landedZ = 1
             for (maxZ in pile.keys.filter { it < fallBrick.zr.first }.sortedDescending()) {
                 for (landedBrick in pile[maxZ]!!) {
                     if (landedBrick.intersectOnXY(fallBrick)) {
@@ -42,7 +42,7 @@ class Day22 {
                     }
                 }
 
-                if (landedZ != 0) break
+                if (landedZ != 1) break
             }
 
             var newLandedBrick = fallBrick
