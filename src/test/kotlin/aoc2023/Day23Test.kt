@@ -16,17 +16,31 @@ class Day23Test {
     fun `part1 example - toy`() {
         val input = """
             #.##
+            #.##
             #..#
             #..#
             #.##
         """.trimIndent()
 
-        assertEquals(5, day23.part1(input))
+        assertEquals(6, day23.part1(input))
     }
 
     @Test
     fun `part1 example - full`() {
         assertEquals(94, day23.part1(INPUT))
+    }
+
+    @Test
+    fun `part2 example - toy`() {
+        val input = """
+            #.###
+            #...#
+            #.#.#
+            #...#
+            #.###
+        """.trimIndent()
+
+        assertEquals(8, day23.part2(input))
     }
 
     @Test
