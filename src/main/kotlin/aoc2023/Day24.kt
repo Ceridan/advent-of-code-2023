@@ -88,17 +88,6 @@ class Day24 {
 
     data class HailStone(val position: Point3D, val velocity: Point3D) {
 
-        // ax + by + c = 0
-        fun calculateGeneralForm(): Triple<Double, Double, Double> {
-            val (x1, y1, _) = position
-            val (x2, y2, _) = Point3D(position.x + velocity.x, position.y + velocity.y, position.z + velocity.z)
-
-            val a = y2 - y1
-            val b = x1 - x2
-            val c = y1 * (x2 - x1) - x1 * (y2 - y1)
-            return Triple(a, b, c)
-        }
-
         // https://www.cuemath.com/geometry/intersection-of-two-lines/
         fun intersect2D(other: HailStone): Point2D {
             val (a1, b1, c1) = this.calculateGeneralForm()
@@ -113,6 +102,17 @@ class Day24 {
             if (sign(point.x - position.x) != sign(velocity.x)) return false
             if (sign(point.y - position.y) != sign(velocity.y)) return false
             return true
+        }
+
+        // ax + by + c = 0
+        private fun calculateGeneralForm(): Triple<Double, Double, Double> {
+            val (x1, y1, _) = position
+            val (x2, y2, _) = Point3D(position.x + velocity.x, position.y + velocity.y, position.z + velocity.z)
+
+            val a = y2 - y1
+            val b = x1 - x2
+            val c = y1 * (x2 - x1) - x1 * (y2 - y1)
+            return Triple(a, b, c)
         }
     }
 
