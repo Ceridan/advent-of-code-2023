@@ -15,7 +15,7 @@ class Day24 {
                 val h2 = hailstones[j]
                 val crossPoint = h1.intersect2D(h2)
 
-                if (area.includes(crossPoint) && h1.isFuturePoint2D(crossPoint) && h2.isFuturePoint2D(crossPoint)) {
+                if (crossPoint.isInRange(area) && h1.isFuturePoint2D(crossPoint) && h2.isFuturePoint2D(crossPoint)) {
                     intersections++
                 }
             }
@@ -76,9 +76,6 @@ class Day24 {
         return stoneX + stoneY + stoneZ
     }
 
-    private fun LongRange.includes(point: Point2D): Boolean =
-        first <= point.x && last >= point.x && first <= point.y && last >= point.y
-
     private fun parseInput(input: List<String>): List<HailStone> {
         val hailLineRegex = "^ *(-?\\d+), +(-?\\d+), +(-?\\d+) @ +(-?\\d+), +(-?\\d+), +(-?\\d+)$".toRegex()
         return input.map { line ->
@@ -119,7 +116,11 @@ class Day24 {
         }
     }
 
-    data class Point2D(val x: Double, val y: Double)
+    data class Point2D(val x: Double, val y: Double) {
+        fun isInRange(range: LongRange): Boolean =
+            range.first <= x && range.last >= x && range.first <= y && range.last >= y
+    }
+
     data class Point3D(val x: Double, val y: Double, val z: Double)
 }
 
