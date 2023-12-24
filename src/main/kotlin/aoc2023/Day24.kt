@@ -39,10 +39,7 @@ class Day24 {
         val sdz = ctx.mkIntConst("sdz")
 
         // It is enough to use only 3 hails to get a complete system of equations: 6 unknown variables (stone) + 3 unknown points in time (per hail).
-        val limit = 3
-        for (i in 0..<limit) {
-            val hail = hailstones[i]
-
+        hailstones.take(3).withIndex().forEach { (i, hail) ->
             val t = ctx.mkIntConst("t$i")
 
             // Stone
