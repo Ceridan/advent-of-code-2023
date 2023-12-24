@@ -27,50 +27,51 @@ class Day24 {
     fun part2(input: List<String>): Long {
         val hailstones = parseInput(input)
 
-        val ctx = Context()
-        val solver = ctx.mkSolver()
-
-        // Stone
-        val sx = ctx.mkIntConst("sx")
-        val sy = ctx.mkIntConst("sy")
-        val sz = ctx.mkIntConst("sz")
-        val sdx = ctx.mkIntConst("sdx")
-        val sdy = ctx.mkIntConst("sdy")
-        val sdz = ctx.mkIntConst("sdz")
-
-        // It is enough to use only 3 hails to get a complete system of equations: 6 unknown variables (stone) + 3 unknown points in time (per hail).
-        hailstones.take(3).withIndex().forEach { (i, hail) ->
-            val t = ctx.mkIntConst("t$i")
+        Context().use { ctx ->
+            val solver = ctx.mkSolver()
 
             // Stone
-            val stx = ctx.mkAdd(sx, ctx.mkMul(sdx, t))
-            val sty = ctx.mkAdd(sy, ctx.mkMul(sdy, t))
-            val stz = ctx.mkAdd(sz, ctx.mkMul(sdz, t))
+            val sx = ctx.mkIntConst("sx")
+            val sy = ctx.mkIntConst("sy")
+            val sz = ctx.mkIntConst("sz")
+            val sdx = ctx.mkIntConst("sdx")
+            val sdy = ctx.mkIntConst("sdy")
+            val sdz = ctx.mkIntConst("sdz")
 
-            // Hail
-            val hx = ctx.mkInt(hail.position.x.toLong())
-            val hy = ctx.mkInt(hail.position.y.toLong())
-            val hz = ctx.mkInt(hail.position.z.toLong())
-            val hdx = ctx.mkInt(hail.velocity.x.toLong())
-            val hdy = ctx.mkInt(hail.velocity.y.toLong())
-            val hdz = ctx.mkInt(hail.velocity.z.toLong())
+            // It is enough to use only 3 hails to get a complete system of equations: 6 unknown variables (stone) + 3 unknown points in time (per hail).
+            hailstones.take(3).withIndex().forEach { (i, hail) ->
+                val t = ctx.mkIntConst("t$i")
 
-            val htx = ctx.mkAdd(hx, ctx.mkMul(hdx, t))
-            val hty = ctx.mkAdd(hy, ctx.mkMul(hdy, t))
-            val htz = ctx.mkAdd(hz, ctx.mkMul(hdz, t))
+                // Stone
+                val stx = ctx.mkAdd(sx, ctx.mkMul(sdx, t))
+                val sty = ctx.mkAdd(sy, ctx.mkMul(sdy, t))
+                val stz = ctx.mkAdd(sz, ctx.mkMul(sdz, t))
 
-            solver.add(ctx.mkEq(stx, htx))
-            solver.add(ctx.mkEq(sty, hty))
-            solver.add(ctx.mkEq(stz, htz))
-            solver.add(ctx.mkGt(t, ctx.mkInt(0)))
+                // Hail
+                val hx = ctx.mkInt(hail.position.x.toLong())
+                val hy = ctx.mkInt(hail.position.y.toLong())
+                val hz = ctx.mkInt(hail.position.z.toLong())
+                val hdx = ctx.mkInt(hail.velocity.x.toLong())
+                val hdy = ctx.mkInt(hail.velocity.y.toLong())
+                val hdz = ctx.mkInt(hail.velocity.z.toLong())
+
+                val htx = ctx.mkAdd(hx, ctx.mkMul(hdx, t))
+                val hty = ctx.mkAdd(hy, ctx.mkMul(hdy, t))
+                val htz = ctx.mkAdd(hz, ctx.mkMul(hdz, t))
+
+                solver.add(ctx.mkEq(stx, htx))
+                solver.add(ctx.mkEq(sty, hty))
+                solver.add(ctx.mkEq(stz, htz))
+                solver.add(ctx.mkGt(t, ctx.mkInt(0)))
+            }
+
+            if (solver.check() == Status.UNSATISFIABLE) throw IllegalStateException("System of equations can't be solved.")
+
+            val stoneX = solver.model.eval(sx, false).toString().toLong()
+            val stoneY = solver.model.eval(sy, false).toString().toLong()
+            val stoneZ = solver.model.eval(sz, false).toString().toLong()
+            return stoneX + stoneY + stoneZ
         }
-
-        if (solver.check() == Status.UNSATISFIABLE) throw IllegalStateException("System of equations can't be solved.")
-
-        val stoneX = solver.model.eval(sx, false).toString().toLong()
-        val stoneY = solver.model.eval(sy, false).toString().toLong()
-        val stoneZ = solver.model.eval(sz, false).toString().toLong()
-        return stoneX + stoneY + stoneZ
     }
 
     private fun parseInput(input: List<String>): List<HailStone> {
