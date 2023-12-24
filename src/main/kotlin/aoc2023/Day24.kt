@@ -68,7 +68,7 @@ class Day24 {
             solver.add(ctx.mkGt(t, ctx.mkInt(0)))
         }
 
-        if (solver.check() == Status.UNSATISFIABLE) throw IllegalStateException("Equation system can't be solved")
+        if (solver.check() == Status.UNSATISFIABLE) throw IllegalStateException("System of equations can't be solved.")
 
         val stoneX = solver.model.eval(sx, false).toString().toLong()
         val stoneY = solver.model.eval(sy, false).toString().toLong()
