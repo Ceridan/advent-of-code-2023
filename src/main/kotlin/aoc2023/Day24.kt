@@ -1,6 +1,8 @@
 package aoc2023
 
 import kotlin.math.sign
+import com.microsoft.z3.Context
+import com.microsoft.z3.Status
 
 class Day24 {
     fun part1(input: List<String>, area: LongRange): Int {
@@ -21,11 +23,61 @@ class Day24 {
         return intersections
     }
 
+    // https://github.com/Z3Prover/z3
     fun part2(input: List<String>): Long {
-        return 0
+        val hailstones = parseInput(input)
+
+        val ctx = Context()
+        val solver = ctx.mkSolver()
+
+        // Stone
+        val sx = ctx.mkIntConst("sx")
+        val sy = ctx.mkIntConst("sy")
+        val sz = ctx.mkIntConst("sz")
+        val sdx = ctx.mkIntConst("sdx")
+        val sdy = ctx.mkIntConst("sdy")
+        val sdz = ctx.mkIntConst("sdz")
+
+        // Build equations based on a first few hails
+        val limit = 3
+        for (i in 0..<limit) {
+            val hail = hailstones[i]
+
+            val t = ctx.mkIntConst("t$i")
+
+            // Stone
+            val stx = ctx.mkAdd(sx, ctx.mkMul(sdx, t))
+            val sty = ctx.mkAdd(sy, ctx.mkMul(sdy, t))
+            val stz = ctx.mkAdd(sz, ctx.mkMul(sdz, t))
+
+            // Hail
+            val hx = ctx.mkInt(hail.position.x.toLong())
+            val hy = ctx.mkInt(hail.position.y.toLong())
+            val hz = ctx.mkInt(hail.position.z.toLong())
+            val hdx = ctx.mkInt(hail.velocity.x.toLong())
+            val hdy = ctx.mkInt(hail.velocity.y.toLong())
+            val hdz = ctx.mkInt(hail.velocity.z.toLong())
+
+            val htx = ctx.mkAdd(hx, ctx.mkMul(hdx, t))
+            val hty = ctx.mkAdd(hy, ctx.mkMul(hdy, t))
+            val htz = ctx.mkAdd(hz, ctx.mkMul(hdz, t))
+
+            solver.add(ctx.mkEq(stx, htx))
+            solver.add(ctx.mkEq(sty, hty))
+            solver.add(ctx.mkEq(stz, htz))
+            solver.add(ctx.mkGt(t, ctx.mkInt(0)))
+        }
+
+        if (solver.check() == Status.UNSATISFIABLE) throw IllegalStateException("Equation system can't be solved")
+
+        val stoneX = solver.model.eval(sx, false).toString().toLong()
+        val stoneY = solver.model.eval(sy, false).toString().toLong()
+        val stoneZ = solver.model.eval(sz, false).toString().toLong()
+        return stoneX + stoneY + stoneZ
     }
 
-    private fun LongRange.includes(point: Point2D): Boolean = first <= point.x && last >= point.x && first <= point.y && last >= point.y
+    private fun LongRange.includes(point: Point2D): Boolean =
+        first <= point.x && last >= point.x && first <= point.y && last >= point.y
 
     private fun parseInput(input: List<String>): List<HailStone> {
         val hailLineRegex = "^ *(-?\\d+), +(-?\\d+), +(-?\\d+) @ +(-?\\d+), +(-?\\d+), +(-?\\d+)$".toRegex()
@@ -61,8 +113,8 @@ class Day24 {
         }
 
         fun isFuturePoint2D(point: Point2D): Boolean {
-            if (sign( point.x - position.x) != sign(velocity.x)) return false
-            if (sign( point.y - position.y) != sign(velocity.y)) return false
+            if (sign(point.x - position.x) != sign(velocity.x)) return false
+            if (sign(point.y - position.y) != sign(velocity.y)) return false
             return true
         }
     }
