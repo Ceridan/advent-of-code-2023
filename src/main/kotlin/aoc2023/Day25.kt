@@ -8,14 +8,15 @@ import java.lang.IllegalStateException
 class Day25 {
     fun part1(input: List<String>): Int {
         val parsedGraph = parseInput(input)
+        val vertices = parsedGraph.map { (k, v) -> v + k }.flatten().toSet()
+        val edges = parsedGraph.map { (k, v) -> v.map { k to it } }.flatten().toSet()
 
         val graph = DefaultUndirectedGraph<String, DefaultEdge>(DefaultEdge::class.java)
-        parsedGraph.keys.forEach { graph.addVertex(it) }
-        parsedGraph.forEach { (k, v) -> v.forEach { graph.addEdge(k, it) } }
+        vertices.forEach { graph.addVertex(it) }
+        edges.forEach { graph.addEdge(it.first, it.second) }
 
         // https://en.wikipedia.org/wiki/Girvan%E2%80%93Newman_algorithm
-        val gn = GirvanNewmanClustering(graph, 2)
-        val clustering = gn.clustering
+        val clustering = GirvanNewmanClustering(graph, 2).clustering
 
         if (clustering.numberClusters != 2) throw IllegalStateException("Can't build exactly 2 clusters.")
 
@@ -32,12 +33,7 @@ class Day25 {
 
             val destinations = rest.split(' ').filter { it.isNotEmpty() }
             destinations.forEach { dest ->
-                if (dest !in graph) {
-                    graph[dest] = mutableSetOf()
-                }
-
                 graph[src]!!.add(dest)
-                graph[dest]!!.add(src)
             }
         }
         return graph
